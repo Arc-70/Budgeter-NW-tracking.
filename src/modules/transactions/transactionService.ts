@@ -31,3 +31,17 @@ export async function deleteTransaction(id: string): Promise<void> {
   const { error } = await supabase.from('transactions').delete().eq('id', id)
   if (error) throw new Error(error.message)
 }
+
+// A transaction read from a slip. slipRef is the unique reference from the
+// slip's QR; the database refuses a second transaction with the same one.
+export async function addSlipTransaction(tx: NewTransaction, slipRef: string | null): Promise<void> {
+  if (!(tx.amount > 0)) throw new Error('Amount must be more than 0')
+  const { error } = await supabase.from('transactions').insert({ ...tx, source: 'slip', slip_ref: slipRef })
+  if (error) throw new Error(error.code === '23505' ? 'This slip has already been added' : error.message)
+}
+
+export async function slipAlreadyAdded(slipRef: string): Promise<boolean> {
+  const { data, error } = await supabase.from('transactions').select('id').eq('slip_ref', slipRef).limit(1)
+  if (error) throw new Error(error.message)
+  return data.length > 0
+}

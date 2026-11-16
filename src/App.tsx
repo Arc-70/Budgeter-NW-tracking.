@@ -5,13 +5,15 @@ import { useSession } from './modules/auth/useSession'
 import { BudgetScreen } from './modules/budget/BudgetScreen'
 import { NetWorthScreen } from './modules/networth/NetWorthScreen'
 import { SettingsScreen } from './modules/settings/SettingsScreen'
+import { ScanScreen } from './modules/slips/ScanScreen'
 import { TransactionsScreen } from './modules/transactions/TransactionsScreen'
 
-type Page = 'week' | 'add' | 'networth' | 'settings'
+type Page = 'week' | 'add' | 'scan' | 'networth' | 'settings'
 
 const PAGES: { id: Page; label: string }[] = [
   { id: 'week', label: 'Week' },
   { id: 'add', label: 'Add' },
+  { id: 'scan', label: 'Scan' },
   { id: 'networth', label: 'Net worth' },
   { id: 'settings', label: 'Settings' },
 ]
@@ -47,6 +49,7 @@ export function App() {
       <main className="page">
         {page === 'week' && <BudgetScreen onAdd={() => setPage('add')} />}
         {page === 'add' && <TransactionsScreen />}
+        {page === 'scan' && <ScanScreen />}
         {page === 'networth' && <NetWorthScreen />}
         {page === 'settings' && <SettingsScreen />}
       </main>
