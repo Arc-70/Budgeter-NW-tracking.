@@ -3,7 +3,8 @@ export type TransactionType = 'expense' | 'income'
 export interface Category {
   id: string
   name: string
-  weekly_limit: number | null
+  weekly_limit: number | null // the soft limit amount (named before monthly limits existed)
+  limit_period?: 'weekly' | 'monthly' // which period the limit covers; weekly if missing
 }
 
 export interface Transaction {

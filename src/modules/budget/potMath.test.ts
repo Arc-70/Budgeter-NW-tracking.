@@ -3,8 +3,8 @@ import { computePot, nextPayDate, payDates, weekStartDayFor, type BalanceReset, 
 
 // 2026-11-16 is a Monday.
 const TODAY = '2026-11-16'
-const rule = (interval: 'weekly' | 'monthly', amount: number, start_date: string, end_date: string | null = null): PayRule => ({
-  id: start_date + interval, amount, interval, start_date, end_date,
+const rule = (interval: PayRule['interval'], amount: number, start_date: string, end_date: string | null = null, every = 1): PayRule => ({
+  id: start_date + interval, amount, interval, every, start_date, end_date,
 })
 const tx = (date: string, amount: number, type: 'expense' | 'income' = 'expense', category_id: string | null = null, created_at = date + 'T12:00:00Z'): BudgetTx => ({
   date, amount, type, category_id, created_at,
@@ -22,6 +22,13 @@ describe('payDates', () => {
     expect(payDates(rule('monthly', 10000, '2026-01-31'), '2026-02-01', '2026-04-30')).toEqual(['2026-02-28', '2026-03-31', '2026-04-30'])
   })
 
+  it('can skip periods: every N days, weeks or months', () => {
+    expect(payDates(rule('daily', 100, '2026-11-10', null, 3), '2026-11-10', '2026-11-20')).toEqual(['2026-11-10', '2026-11-13', '2026-11-16', '2026-11-19'])
+    expect(payDates(rule('daily', 100, '2026-11-10'), '2026-11-14', '2026-11-16')).toEqual(['2026-11-14', '2026-11-15', '2026-11-16'])
+    expect(payDates(rule('weekly', 3000, '2026-11-06', null, 2), '2026-11-01', '2026-12-10')).toEqual(['2026-11-06', '2026-11-20', '2026-12-04'])
+    expect(payDates(rule('monthly', 30000, '2026-01-15', null, 3), '2026-02-01', '2026-12-31')).toEqual(['2026-04-15', '2026-07-15', '2026-10-15'])
+  })
+
   it('stops at the end date', () => {
     expect(payDates(rule('weekly', 1500, '2026-11-06', '2026-11-13'), '2026-11-01', '2026-11-30')).toEqual(['2026-11-06', '2026-11-13'])
   })
@@ -33,6 +40,8 @@ describe('nextPayDate', () => {
     expect(nextPayDate(rule('monthly', 10000, '2026-11-01'), TODAY)).toBe('2026-12-01')
     expect(nextPayDate(rule('weekly', 1500, '2027-03-01'), TODAY)).toBe('2027-03-01')
     expect(nextPayDate(rule('weekly', 1500, '2026-11-06', '2026-11-13'), TODAY)).toBeNull()
+    expect(nextPayDate(rule('monthly', 30000, '2026-11-01', null, 6), TODAY)).toBe('2027-05-01')
+    expect(nextPayDate(rule('daily', 100, '2026-11-10', null, 4), TODAY)).toBe('2026-11-18')
   })
 })
 
@@ -74,6 +83,13 @@ describe('computePot', () => {
     expect(p.spentThisWeek).toBe(150)
     expect(p.paidThisWeek).toBe(1500)
     expect(p.spentByCategory.get('food')).toBe(150)
+  })
+
+  it('tracks spending per category for the calendar month too', () => {
+    const p = computePot([], [], [tx('2026-10-31', 999, 'expense', 'bills'), tx('2026-11-02', 400, 'expense', 'bills'), tx(TODAY, 100, 'expense', 'bills')], 1, TODAY)
+    expect([p.monthStart, p.monthEnd]).toEqual(['2026-11-01', '2026-11-30'])
+    expect(p.spentByCategoryMonth.get('bills')).toBe(500)
+    expect(p.spentByCategory.get('bills')).toBe(100)
   })
 
   it('ignores transactions dated in the future', () => {

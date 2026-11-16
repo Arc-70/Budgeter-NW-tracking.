@@ -30,8 +30,8 @@ export async function addCategory(name: string): Promise<void> {
   if (error) throw new Error(error.code === '23505' ? 'That category already exists' : error.message)
 }
 
-export async function setCategoryLimit(id: string, weeklyLimit: number | null): Promise<void> {
-  const { error } = await supabase.from('categories').update({ weekly_limit: weeklyLimit }).eq('id', id)
+export async function setCategoryLimit(id: string, limit: number | null, period: 'weekly' | 'monthly'): Promise<void> {
+  const { error } = await supabase.from('categories').update({ weekly_limit: limit, limit_period: period }).eq('id', id)
   if (error) throw new Error(error.message)
 }
 

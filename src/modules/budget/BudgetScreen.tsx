@@ -4,7 +4,7 @@ import { listTransactions } from '../transactions/transactionService'
 import type { Transaction } from '../transactions/types'
 import { loadBudgetData, potFor, type BudgetData } from './budgetService'
 import { Meter } from './Meter'
-import { PayPlanCard } from './PayPlanCard'
+import { describeRule, PayPlanCard } from './PayPlanCard'
 
 const inDays = (n: number) => (n === 1 ? 'tomorrow' : `in ${n} days`)
 
@@ -87,7 +87,7 @@ export function BudgetScreen({ onAdd }: { onAdd: () => void }) {
             <p className="small" key={n.rule.id}>
               <b className="num">{money(n.rule.amount)}</b>{' '}
               <span className="muted">
-                {inDays(n.inDays)} · {shortDate(n.date)} · {n.rule.interval}
+                {inDays(n.inDays)} · {shortDate(n.date)} · {describeRule(n.rule)}
               </span>
             </p>
           ))}
@@ -109,12 +109,18 @@ export function BudgetScreen({ onAdd }: { onAdd: () => void }) {
 
       <div className="two">
         <div className="card">
-          <h3>Categories this week (soft limits)</h3>
+          <h3>Categories (soft limits)</h3>
           {data.categories.map((c) => (
-            <Meter key={c.id} name={c.name} spent={pot.spentByCategory.get(c.id) ?? 0} limit={c.weekly_limit} />
+            <Meter
+              key={c.id}
+              name={c.name}
+              spent={(c.limit_period === 'monthly' ? pot.spentByCategoryMonth : pot.spentByCategory).get(c.id) ?? 0}
+              limit={c.weekly_limit}
+              period={c.limit_period}
+            />
           ))}
           {uncategorised > 0 && <Meter name="Uncategorised" spent={uncategorised} limit={null} />}
-          <p className="muted small">Set limits in Settings. Going over only shows a warning.</p>
+          <p className="muted small">Weekly unless marked "this month". Set limits in Settings; going over only shows a warning.</p>
         </div>
 
         <div className="card">

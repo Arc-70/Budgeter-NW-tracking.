@@ -79,7 +79,7 @@ export function SettingsScreen() {
 
       <div className="card">
         <h3>Spending categories</h3>
-        <p className="muted small">Weekly limits are suggestions. Leave a limit empty for none.</p>
+        <p className="muted small">Limits are suggestions, per week or per calendar month. Leave a limit empty for none.</p>
         {categories.map((c) => (
           <div className="row" key={c.id}>
             <span>{c.name}</span>
@@ -90,12 +90,20 @@ export function SettingsScreen() {
               min="0"
               placeholder="No limit"
               defaultValue={c.weekly_limit ?? ''}
-              aria-label={`Weekly limit for ${c.name}`}
+              aria-label={`Limit for ${c.name}`}
               onBlur={(e) => {
                 const value = e.target.value === '' ? null : Number(e.target.value)
-                if (value !== c.weekly_limit) run(() => setCategoryLimit(c.id, value), `${c.name} limit saved`)
+                if (value !== c.weekly_limit) run(() => setCategoryLimit(c.id, value, c.limit_period ?? 'weekly'), `${c.name} limit saved`)
               }}
             />
+            <select
+              value={c.limit_period ?? 'weekly'}
+              aria-label={`Limit period for ${c.name}`}
+              onChange={(e) => run(() => setCategoryLimit(c.id, c.weekly_limit, e.target.value as 'weekly' | 'monthly'), `${c.name} limit saved`)}
+            >
+              <option value="weekly">a week</option>
+              <option value="monthly">a month</option>
+            </select>
             <button
               className="link"
               aria-label={`Delete ${c.name}`}

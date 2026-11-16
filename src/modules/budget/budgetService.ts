@@ -18,7 +18,7 @@ function check(error: { message: string } | null) {
 }
 
 export async function listPayRules(): Promise<PayRule[]> {
-  const { data, error } = await supabase.from('pay_rules').select('id, amount, interval, start_date, end_date').order('start_date')
+  const { data, error } = await supabase.from('pay_rules').select('id, amount, interval, every, start_date, end_date').order('start_date')
   check(error)
   return data!.map((r) => ({ ...r, amount: Number(r.amount) })) as PayRule[]
 }
@@ -52,10 +52,11 @@ export async function loadBudgetData(): Promise<BudgetData> {
 export const potFor = (d: BudgetData, today: string): PotSummary =>
   computePot(d.rules, d.resets, d.txs, d.fallbackWeekStartDay, today)
 
-export async function addPayRule(amount: number, interval: 'weekly' | 'monthly', startDate: string): Promise<void> {
+export async function addPayRule(amount: number, interval: PayRule['interval'], every: number, startDate: string): Promise<void> {
   if (!(amount > 0)) throw new Error('Pay amount must be more than 0')
+  if (!Number.isInteger(every) || every < 1) throw new Error('"Every" must be a whole number, 1 or more')
   if (!startDate) throw new Error('Pick a start date')
-  const { error } = await supabase.from('pay_rules').insert({ amount, interval, start_date: startDate })
+  const { error } = await supabase.from('pay_rules').insert({ amount, interval, every, start_date: startDate })
   check(error)
 }
 

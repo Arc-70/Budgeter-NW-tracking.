@@ -237,3 +237,15 @@ alter table nw_snapshots enable row level security;
 drop policy if exists "own nw snapshots" on nw_snapshots;
 create policy "own nw snapshots" on nw_snapshots for all
   using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- ===================== Flexible pay intervals and monthly limits (added later) =====================
+
+-- Pay can arrive every N days, weeks or months.
+alter table pay_rules add column if not exists every int not null default 1 check (every >= 1);
+alter table pay_rules drop constraint if exists pay_rules_interval_check;
+alter table pay_rules add constraint pay_rules_interval_check check (interval in ('daily', 'weekly', 'monthly'));
+
+-- A category's soft limit covers a week or a calendar month.
+-- (The limit amount itself stays in the weekly_limit column.)
+alter table categories add column if not exists limit_period text not null default 'weekly'
+  check (limit_period in ('weekly', 'monthly'));

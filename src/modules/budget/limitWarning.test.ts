@@ -1,13 +1,22 @@
 import { describe, expect, it } from 'vitest'
 import { overLimitBy, type WeekSpending } from './limitWarning'
 
-const spending: WeekSpending = { weekStart: '2026-11-16', weekEnd: '2026-11-22', spentByCategory: new Map([['food', 1450]]) }
+const spending: WeekSpending = { weekStart: '2026-11-16', weekEnd: '2026-11-22', spentByCategory: new Map([['food', 1450]]),
+  monthStart: '2026-11-01', monthEnd: '2026-11-30', spentByCategoryMonth: new Map([['food', 4000], ['bills', 2800]]),
+}
 const food = { id: 'food', name: 'Food', weekly_limit: 1500 }
 
 describe('overLimitBy', () => {
   it('says how far over the limit an expense would go', () => {
     expect(overLimitBy(spending, food, 120, '2026-11-16')).toBe(70)
     expect(overLimitBy(spending, food, 50, '2026-11-16')).toBe(0)
+  })
+
+  it('checks a monthly limit against the whole month', () => {
+    const bills = { id: 'bills', name: 'Bills', weekly_limit: 3000, limit_period: 'monthly' as const }
+    expect(overLimitBy(spending, bills, 500, '2026-11-03')).toBe(300) // earlier in the month still counts
+    expect(overLimitBy(spending, bills, 100, '2026-11-16')).toBe(0)
+    expect(overLimitBy(spending, bills, 500, '2026-10-31')).toBe(0)
   })
 
   it('stays quiet for other weeks, no limit, or no category', () => {

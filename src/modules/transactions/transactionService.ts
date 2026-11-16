@@ -5,7 +5,7 @@ import type { Category, NewTransaction, Transaction } from './types'
 // talk to Supabase directly.
 
 export async function listCategories(): Promise<Category[]> {
-  const { data, error } = await supabase.from('categories').select('id, name, weekly_limit').order('name')
+  const { data, error } = await supabase.from('categories').select('id, name, weekly_limit, limit_period').order('name')
   if (error) throw new Error(error.message)
   return data
 }

@@ -3,12 +3,14 @@
 
 import { addDays, daysBetween, weekStartOf } from './weekMath'
 
-// One line of a pay plan. Weekly pay arrives every 7 days from start_date;
-// monthly pay arrives on the same day of the month as start_date.
+// One line of a pay plan: `amount` arrives every `every` days, weeks or months,
+// counted from start_date. Weekly pay keeps the weekday of its start date and
+// monthly pay keeps its day of the month.
 export interface PayRule {
   id: string
   amount: number
-  interval: 'weekly' | 'monthly'
+  interval: 'daily' | 'weekly' | 'monthly'
+  every: number // 1 = every period, 2 = every second one, ...
   start_date: string // YYYY-MM-DD
   end_date: string | null // last day the rule applies; null = still running
 }
@@ -37,7 +39,10 @@ export interface PotSummary {
   weekEnd: string
   spentThisWeek: number
   paidThisWeek: number // pay that arrived this week
-  spentByCategory: Map<string | null, number>
+  spentByCategory: Map<string | null, number> // this week
+  monthStart: string // calendar month, for monthly category limits
+  monthEnd: string
+  spentByCategoryMonth: Map<string | null, number>
   history: { weekStart: string; spent: number }[] // last 6 weeks, oldest first
   nextPays: { rule: PayRule; date: string; inDays: number }[] // soonest first
 }
@@ -52,23 +57,26 @@ function monthlyDate(year: number, monthIndex: number, day: number): string {
 export function payDates(rule: PayRule, from: string, to: string): string[] {
   const end = rule.end_date && rule.end_date < to ? rule.end_date : to
   const dates: string[] = []
-  if (rule.interval === 'weekly') {
-    let d = rule.start_date
-    if (d < from) d = addDays(d, Math.ceil(daysBetween(d, from) / 7) * 7)
-    for (; d <= end; d = addDays(d, 7)) dates.push(d)
-  } else {
+  const every = Math.max(1, Math.floor(rule.every))
+  if (rule.interval === 'monthly') {
     const [year, month, day] = rule.start_date.split('-').map(Number)
-    for (let i = 0; ; i++) {
+    for (let i = 0; ; i += every) {
       const d = monthlyDate(year, month - 1 + i, day)
       if (d > end) break
       if (d >= from) dates.push(d)
     }
+  } else {
+    const step = rule.interval === 'weekly' ? 7 * every : every
+    let d = rule.start_date
+    if (d < from) d = addDays(d, Math.ceil(daysBetween(d, from) / step) * step)
+    for (; d <= end; d = addDays(d, step)) dates.push(d)
   }
   return dates
 }
 
 export function nextPayDate(rule: PayRule, today: string): string | null {
-  const horizon = addDays(today, 62)
+  // Far enough ahead to contain the next payday of even a slow rule.
+  const horizon = addDays(today, (rule.interval === 'monthly' ? 31 : rule.interval === 'weekly' ? 7 : 1) * Math.max(1, rule.every) + 31)
   return payDates(rule, addDays(today, 1), rule.start_date > horizon ? rule.start_date : horizon)[0] ?? null
 }
 
@@ -120,6 +128,16 @@ export function computePot(
     if (w === weekStart) spentByCategory.set(t.category_id, (spentByCategory.get(t.category_id) ?? 0) + t.amount)
   }
 
+  const monthStart = today.slice(0, 8) + '01'
+  const [year, month] = today.split('-').map(Number)
+  const monthEnd = monthlyDate(year, month - 1, 31)
+  const spentByCategoryMonth = new Map<string | null, number>()
+  for (const t of txs) {
+    if (t.type === 'expense' && t.date >= monthStart && t.date <= today) {
+      spentByCategoryMonth.set(t.category_id, (spentByCategoryMonth.get(t.category_id) ?? 0) + t.amount)
+    }
+  }
+
   const history = []
   for (let i = 5; i >= 0; i--) {
     const w = addDays(weekStart, -7 * i)
@@ -141,6 +159,9 @@ export function computePot(
     spentThisWeek: spentByWeek.get(weekStart) ?? 0,
     paidThisWeek: rules.reduce((sum, r) => sum + payDates(r, weekStart, today).length * r.amount, 0),
     spentByCategory,
+    monthStart,
+    monthEnd,
+    spentByCategoryMonth,
     history,
     nextPays,
   }

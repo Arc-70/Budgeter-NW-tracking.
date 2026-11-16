@@ -5,9 +5,13 @@ import type { BalanceReset, PayRule } from './potMath'
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
-function describe(rule: PayRule): string {
+// "every Friday", "every 2 weeks on Friday", "every 3 days", "monthly on day 1", ...
+export function describeRule(rule: PayRule): string {
   const start = new Date(rule.start_date + 'T00:00:00')
-  return rule.interval === 'weekly' ? `every ${WEEKDAYS[start.getDay()]}` : `monthly on day ${start.getDate()}`
+  const n = rule.every
+  if (rule.interval === 'daily') return n === 1 ? 'every day' : `every ${n} days`
+  if (rule.interval === 'weekly') return n === 1 ? `every ${WEEKDAYS[start.getDay()]}` : `every ${n} weeks on ${WEEKDAYS[start.getDay()]}`
+  return n === 1 ? `monthly on day ${start.getDate()}` : `every ${n} months on day ${start.getDate()}`
 }
 
 // The pay plan editor and the "money I have right now" tool. Used in Settings
@@ -18,7 +22,8 @@ export function PayPlanCard({ onChange }: { onChange?: () => void }) {
   const [message, setMessage] = useState<string | null>(null)
 
   const [amount, setAmount] = useState('')
-  const [interval, setInterval] = useState<'weekly' | 'monthly'>('weekly')
+  const [interval, setInterval] = useState<PayRule['interval']>('weekly')
+  const [every, setEvery] = useState('1')
   const [start, setStart] = useState(todayISO())
   const [ending, setEnding] = useState<{ id: string; date: string } | null>(null)
   const [balance, setBalance] = useState('')
@@ -57,8 +62,9 @@ export function PayPlanCard({ onChange }: { onChange?: () => void }) {
       <div className="card">
         <h3>Pay plan</h3>
         <p className="muted small">
-          Add one line for each way you get paid. Weekly pay arrives on the same weekday as its start date; monthly pay on the
-          same day of the month. To change your plan, end a line and add a new one. What's in your pot carries over.
+          Add one line for each way you get paid: an amount, how often (every 1 week, every 3 days, every 2 months…) and the
+          date it starts. Weekly pay keeps the weekday of its start date; monthly pay keeps its day of the month. To change your
+          plan, end a line and add a new one. What's in your pot carries over.
         </p>
         {message && <p className="note">{message}</p>}
         {rules.length === 0 && <p className="muted small">No pay set up yet.</p>}
@@ -67,7 +73,7 @@ export function PayPlanCard({ onChange }: { onChange?: () => void }) {
           return (
             <div className={`row ${ended ? 'muted' : ''}`} key={r.id}>
               <span>
-                <b className="num">{money(r.amount)}</b> {describe(r)}
+                <b className="num">{money(r.amount)}</b> {describeRule(r)}
                 <span className="muted small">
                   {' '}
                   · {r.start_date > today ? 'starts' : 'from'} {dateWithYear(r.start_date)}
@@ -104,16 +110,20 @@ export function PayPlanCard({ onChange }: { onChange?: () => void }) {
         })}
         <div className="row wrap">
           <input className="short" value={amount} onChange={(e) => setAmount(e.target.value)} type="number" inputMode="decimal" min="1" step="0.01" placeholder="Amount" aria-label="Pay amount" />
-          <select value={interval} onChange={(e) => setInterval(e.target.value as 'weekly' | 'monthly')} aria-label="How often">
-            <option value="weekly">Every week</option>
-            <option value="monthly">Every month</option>
+          <span className="muted small">every</span>
+          <input className="tiny" value={every} onChange={(e) => setEvery(e.target.value)} type="number" inputMode="numeric" min="1" step="1" aria-label="How many periods between each pay" />
+          <select value={interval} onChange={(e) => setInterval(e.target.value as PayRule['interval'])} aria-label="Period">
+            <option value="daily">{every === '1' ? 'day' : 'days'}</option>
+            <option value="weekly">{every === '1' ? 'week' : 'weeks'}</option>
+            <option value="monthly">{every === '1' ? 'month' : 'months'}</option>
           </select>
+          <span className="muted small">from</span>
           <input type="date" value={start} onChange={(e) => setStart(e.target.value)} aria-label="Start date" />
           <button
             className="primary inline"
             onClick={() =>
               run(async () => {
-                await addPayRule(Number(amount), interval, start)
+                await addPayRule(Number(amount), interval, Number(every), start)
                 setAmount('')
               }, 'Pay line added')
             }

@@ -2,7 +2,7 @@ import { money } from '../../lib/format'
 import { limitStatus } from './weekMath'
 
 // One category row: name, spent against its soft limit, and a bar.
-export function Meter({ name, spent, limit }: { name: string; spent: number; limit: number | null }) {
+export function Meter({ name, spent, limit, period }: { name: string; spent: number; limit: number | null; period?: 'weekly' | 'monthly' }) {
   const status = limitStatus(spent, limit)
   const width = limit && limit > 0 ? Math.min(100, (spent / limit) * 100) : 0
   return (
@@ -15,6 +15,7 @@ export function Meter({ name, spent, limit }: { name: string; spent: number; lim
       <span className="num small">
         {money(spent)}
         {limit ? ` / ${money(limit)}` : ''}
+        {limit && period === 'monthly' ? ' this month' : ''}
       </span>
       {limit ? (
         <div className="bar">
