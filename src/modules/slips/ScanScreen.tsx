@@ -59,9 +59,9 @@ export function ScanScreen() {
       setDraft(result)
       setAmount(result.amount === null ? '' : String(result.amount))
       setDate(result.date ?? todayISO())
-      setNote('')
+      setNote(result.memo ?? '') // start from the memo written on the slip, if there is one
       setPickedByHand(false)
-      setCategoryId(suggest('', result.text))
+      setCategoryId(suggest(result.memo ?? '', result.text))
       setDuplicate(result.dedupeKey ? await slipAlreadyAdded(result.dedupeKey) : false)
       setStage('confirm')
     } catch (err) {

@@ -9,6 +9,7 @@ import { parseSlipQr } from './qr'
 export interface SlipDraft {
   amount: number | null
   date: string | null
+  memo: string | null // the note written on the slip itself
   text: string // everything OCR read, used for keyword rules
   bank: string | null
   dedupeKey: string | null
@@ -41,7 +42,7 @@ export async function readSlip(file: Blob, today: string): Promise<SlipDraft> {
   const qrText = readQr(scaled) ?? readQr(draw(image, image.width))
   const qr = qrText ? parseSlipQr(qrText, today) : null
 
-  // Step 2: OCR reads the printed text for the amount and date.
+  // Step 2: OCR reads the printed text for the amount, date and memo.
   let text = await readText(scaled)
   const fields = parseSlipText(text, today)
 
@@ -54,6 +55,7 @@ export async function readSlip(file: Blob, today: string): Promise<SlipDraft> {
     fields.amount ??= retry.amount
     fields.date ??= retry.date
     fields.reference ??= retry.reference
+    fields.memo ??= retry.memo
     text += '\n' + retryText
   }
 
@@ -61,6 +63,7 @@ export async function readSlip(file: Blob, today: string): Promise<SlipDraft> {
     amount: fields.amount,
     // The date inside the QR is exact, so it wins over the OCR reading.
     date: qr?.dateHint ?? fields.date,
+    memo: fields.memo,
     text,
     bank: qr?.bank ?? bankFromText(text),
     // No QR (TrueMoney payments, cropped slips): fall back to the printed transaction id.
