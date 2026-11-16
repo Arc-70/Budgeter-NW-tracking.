@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Budgeter mockups</title>
+<style>
+  /* ---------- Themes ---------- */
+  body[data-theme="pastel-dark"] {
+    --bg:#000; --surface:#0d1014; --raised:#161a21; --line:#252b35;
+    --text:#f2f6fb; --muted:#9aa7b8; --accent:#a8d0f5; --accent-ink:#06121f;
+    --mark:#a8d0f5; --track:#1d232c; --good:#3fc493; --warn:#e0a526; --over:#ee6b6b;
+  }
+  body[data-theme="pastel-light"] {
+    --bg:#cfe5fa; --surface:#eef6fe; --raised:#ffffff; --line:#b3cde6;
+    --text:#0a0a0a; --muted:#44546a; --accent:#0a0a0a; --accent-ink:#dcecfb;
+    --mark:#2468b4; --track:#d3e4f5; --good:#0f8a5f; --warn:#a86a00; --over:#c93030;
+  }
+  body[data-theme="slate"] {
+    --bg:#0f172a; --surface:#1e293b; --raised:#273449; --line:#334155;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; --accent-ink:#082f49;
+    --mark:#38bdf8; --track:#2b3a50; --good:#3fc493; --warn:#e0a526; --over:#ee6b6b;
+  }
+
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,'Segoe UI',sans-serif; transition:background .2s,color .2s; }
+  button { font:inherit; cursor:pointer; border:0; }
+  h1,h2,h3,p { margin:0; }
+  .num { font-variant-numeric:tabular-nums; }
+  .muted { color:var(--muted); }
+  .small { font-size:.8rem; }
+
+  /* ---------- Mockup controls ---------- */
+  .controls { position:sticky; top:0; z-index:5; display:flex; flex-wrap:wrap; gap:.75rem 1.5rem; align-items:center; padding:.75rem 1rem; background:var(--bg); border-bottom:1px solid var(--line); }
+  .controls b { font-size:.8rem; color:var(--muted); margin-right:.4rem; }
+  .seg { display:inline-flex; border:1px solid var(--line); border-radius:999px; overflow:hidden; }
+  .seg button { background:none; color:var(--muted); padding:.4rem .9rem; font-size:.85rem; }
+  .seg button.on { background:var(--accent); color:var(--accent-ink); font-weight:600; }
+  .stage { padding:1.5rem 1rem 3rem; }
+  .stage > section { display:none; }
+  .stage > section.on { display:block; }
+  .caption { text-align:center; margin:.6rem 0 0; }
+
+  /* ---------- Shared pieces ---------- */
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:1rem; padding:1rem; }
+  .card h3 { font-size:.8rem; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:.6rem; }
+  .hero { font-size:2.2rem; font-weight:700; line-height:1.1; }
+  .primary { background:var(--accent); color:var(--accent-ink); font-weight:600; border-radius:.75rem; padding:.8rem; width:100%; }
+  .ghost { background:var(--raised); color:var(--text); border:1px solid var(--line); border-radius:.75rem; padding:.8rem; width:100%; }
+  .field { display:flex; flex-direction:column; gap:.25rem; font-size:.78rem; color:var(--muted); }
+  .field div { background:var(--raised); border:1px solid var(--line); border-radius:.6rem; padding:.6rem .7rem; color:var(--text); font-size:.95rem; }
+
+  /* Meter list: one row per category, soft limit */
+  .meter { display:grid; grid-template-columns:1fr auto; gap:.2rem .5rem; padding:.55rem 0; border-top:1px solid var(--line); }
+  .meter:first-of-type { border-top:0; }
+  .meter .bar { grid-column:1/-1; height:8px; background:var(--track); border-radius:4px; overflow:hidden; }
+  .meter .bar i { display:block; height:100%; border-radius:4px; background:var(--mark); }
+  .meter.warn .bar i { background:var(--warn); }
+  .meter.over .bar i { background:var(--over); }
+  .flag { font-size:.72rem; font-weight:600; margin-left:.4rem; }
+  .warn .flag { color:var(--warn); } .over .flag { color:var(--over); }
+
+  .tx { display:flex; justify-content:space-between; gap:.5rem; padding:.55rem 0; border-top:1px solid var(--line); font-size:.9rem; }
+  .tx:first-of-type { border-top:0; }
+  .tx span:first-child { display:flex; flex-direction:column; }
+
+  /* ---------- Phone ---------- */
+  .phones { display:flex; flex-wrap:wrap; gap:1.5rem; justify-content:center; }
+  .phone { width:320px; }
+  .phone .frame { height:640px; border:8px solid var(--line); border-radius:2.2rem; background:var(--bg); display:flex; flex-direction:column; overflow:hidden; }
+  .phone .body { flex:1; overflow:auto; padding:1rem .9rem; display:flex; flex-direction:column; gap:.8rem; }
+  .tabs { display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid var(--line); background:var(--surface); }
+  .tabs span { text-align:center; padding:.6rem 0 .7rem; font-size:.7rem; color:var(--muted); }
+  .tabs span.on { color:var(--text); font-weight:600; box-shadow:inset 0 2px 0 var(--accent); }
+  .pot { display:grid; grid-template-columns:repeat(3,1fr); gap:.4rem; margin-top:.8rem; }
+  .pot div { background:var(--raised); border-radius:.6rem; padding:.45rem .5rem; }
+  .pot b { display:block; font-size:.9rem; }
+  .slip { border:1px dashed var(--line); border-radius:.8rem; height:150px; display:grid; place-items:center; text-align:center; background:var(--raised); }
+  .chips { display:flex; flex-wrap:wrap; gap:.4rem; }
+  .chips span { border:1px solid var(--line); border-radius:999px; padding:.3rem .7rem; font-size:.8rem; color:var(--muted); }
+  .chips span.on { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600; }
+  .note { border-left:3px solid var(--warn); background:var(--raised); padding:.5rem .6rem; border-radius:.3rem; font-size:.78rem; }
+
+  /* ---------- Desktop ---------- */
+  .desk { max-width:1180px; margin:0 auto; border:1px solid var(--line); border-radius:1rem; overflow:hidden; display:grid; grid-template-columns:200px 1fr; min-height:640px; }
+  .side { background:var(--surface); border-right:1px solid var(--line); padding:1rem .75rem; display:flex; flex-direction:column; gap:.25rem; }
+  .side strong { padding:.3rem .6rem 1rem; font-size:1.05rem; }
+  .side button { text-align:left; background:none; color:var(--muted); padding:.55rem .6rem; border-radius:.5rem; }
+  .side button.on { background:var(--raised); color:var(--text); font-weight:600; }
+  .main { padding:1.25rem; }
+  .main > div { display:none; }
+  .main > div.on { display:grid; gap:1rem; }
+  .head { display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap; }
+  .head .primary { width:auto; padding:.55rem 1rem; }
+  .tiles { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; }
+  .tile b { font-size:1.5rem; display:block; }
+  .two { display:grid; grid-template-columns:3fr 2fr; gap:1rem; }
+  .delta { color:var(--good); font-weight:600; font-size:.85rem; }
+  .chart { position:relative; }
+  .chart svg { display:block; width:100%; height:auto; }
+  .tip { position:absolute; pointer-events:none; background:var(--raised); border:1px solid var(--line); border-radius:.5rem; padding:.35rem .55rem; font-size:.8rem; white-space:nowrap; transform:translate(-50%,-120%); display:none; }
+  .rank { display:grid; grid-template-columns:7.5rem 1fr auto; gap:.6rem; align-items:center; padding:.45rem 0; font-size:.9rem; }
+  .rank .bar { height:12px; background:var(--track); border-radius:4px; }
+  .rank .bar i { display:block; height:100%; background:var(--mark); border-radius:4px; }
+  .rank.debt .bar i { background:var(--muted); }
+  table { width:100%; border-collapse:collapse; font-size:.9rem; }
+  th { text-align:left; color:var(--muted); font-weight:500; font-size:.78rem; padding:.4rem .5rem; }
+  td { padding:.55rem .5rem; border-top:1px solid var(--line); }
+  td.r, th.r { text-align:right; }
+  .weeks { display:grid; grid-template-columns:repeat(6,1fr); gap:.6rem; align-items:end; height:150px; }
+  .weeks div { display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:.3rem; height:100%; font-size:.75rem; color:var(--muted); }
+  .weeks i { display:block; width:60%; background:var(--mark); border-radius:4px 4px 0 0; }
+  @media (max-width:900px) { .desk { grid-template-columns:1fr; } .side { flex-direction:row; flex-wrap:wrap; border-right:0; border-bottom:1px solid var(--line); } .side strong { padding:.5rem .6rem; } .tiles { grid-template-columns:repeat(2,1fr); } .two { grid-template-columns:1fr; } }
+</style>
+</head>
+<body data-theme="pastel-dark">
+
+<div class="controls">
+  <span><b>Theme</b><span class="seg" id="themes">
+    <button data-v="pastel-dark" class="on">Pastel blue on black</button>
+    <button data-v="pastel-light">Black on pastel blue</button>
+    <button data-v="slate">Slate (current)</button>
+  </span></span>
+  <span><b>Device</b><span class="seg" id="devices">
+    <button data-v="phone" class="on">Phone</button>
+    <button data-v="pc">PC</button>
+  </span></span>
+  <span class="muted small">Mockup with example numbers. Nothing here saves.</span>
+</div>
+
+<div class="stage">
+
+<!-- ================= PHONE ================= -->
+<section id="phone" class="on">
+  <div class="phones">
+
+    <div class="phone">
+      <div class="frame">
+        <div class="body">
+          <div class="card">
+            <h3>Left this week</h3>
+            <div class="hero num">฿2,770</div>
+            <p class="muted small">4 days left · about ฿690 a day</p>
+            <div class="pot">
+              <div><span class="muted small">Pay</span><b class="num">฿5,000</b></div>
+              <div><span class="muted small">Rolled over</span><b class="num">+฿640</b></div>
+              <div><span class="muted small">Spent</span><b class="num">฿2,870</b></div>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Categories</h3>
+            <div class="meter over"><span>Fun <span class="flag">▲ ฿200 over</span></span><span class="num small">฿700 / ฿500</span><div class="bar"><i style="width:100%"></i></div></div>
+            <div class="meter warn"><span>Food <span class="flag">! near limit</span></span><span class="num small">฿1,450 / ฿1,500</span><div class="bar"><i style="width:97%"></i></div></div>
+            <div class="meter"><span>Transport</span><span class="num small">฿420 / ฿600</span><div class="bar"><i style="width:70%"></i></div></div>
+            <div class="meter"><span>Bills</span><span class="num small">฿300 / ฿800</span><div class="bar"><i style="width:38%"></i></div></div>
+          </div>
+          <div class="card">
+            <h3>Today</h3>
+            <div class="tx"><span>Food<span class="muted small">7-Eleven · slip</span></span><span class="num">-฿85</span></div>
+            <div class="tx"><span>Transport<span class="muted small">BTS</span></span><span class="num">-฿47</span></div>
+          </div>
+        </div>
+        <div class="tabs"><span class="on">Week</span><span>Add</span><span>Scan</span><span>Net worth</span></div>
+      </div>
+      <p class="caption muted small">Home: the weekly pot</p>
+    </div>
+
+    <div class="phone">
+      <div class="frame">
+        <div class="body">
+          <h2>Add</h2>
+          <div class="seg" style="align-self:flex-start"><button class="on">Expense</button><button>Income</button></div>
+          <div class="card" style="text-align:center"><span class="muted small">Amount</span><div class="hero num">฿120.00</div></div>
+          <div>
+            <p class="muted small" style="margin-bottom:.4rem">Category</p>
+            <div class="chips"><span class="on">Food</span><span>Transport</span><span>Bills</span><span>Shopping</span><span>Fun</span><span>Other</span></div>
+          </div>
+          <label class="field">Date<div>Today, 16 Nov</div></label>
+          <label class="field">Note<div class="muted">Optional</div></label>
+          <div class="note">Food will be ฿70 over its ฿1,500 limit. You can still save.</div>
+          <button class="primary">Save</button>
+        </div>
+        <div class="tabs"><span>Week</span><span class="on">Add</span><span>Scan</span><span>Net worth</span></div>
+      </div>
+      <p class="caption muted small">Quick add, with a soft-limit warning</p>
+    </div>
+
+    <div class="phone">
+      <div class="frame">
+        <div class="body">
+          <h2>Check slip</h2>
+          <div class="slip"><div><b>SCB slip photo</b><p class="muted small">QR read · not a duplicate</p></div></div>
+          <label class="field">Amount<div class="num">฿350.00</div></label>
+          <label class="field">Paid to<div>ร้านข้าวมันไก่ป้าแดง</div></label>
+          <label class="field">Date and time<div>16 Nov 2026, 12:41</div></label>
+          <div>
+            <p class="muted small" style="margin-bottom:.4rem">Category</p>
+            <div class="chips"><span class="on">Food</span><span>Transport</span><span>Bills</span><span>Other</span></div>
+          </div>
+          <p class="muted small">Read from the slip on this phone. Fix anything that's wrong before saving.</p>
+          <button class="primary">Looks right, save</button>
+          <button class="ghost">Scan again</button>
+        </div>
+        <div class="tabs"><span>Week</span><span>Add</span><span class="on">Scan</span><span>Net worth</span></div>
+      </div>
+      <p class="caption muted small">Slip scan: confirm before saving</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================= PC ================= -->
+<section id="pc">
+  <div class="desk">
+    <nav class="side" id="nav">
+      <strong>Budgeter</strong>
+      <button data-v="nw" class="on">Net worth</button>
+      <button data-v="budget">Budget</button>
+      <button disabled>Transactions</button>
+      <button disabled>Settings</button>
+    </nav>
+    <div class="main">
+
+      <div id="nw" class="on">
+        <div class="head"><h2>Net worth</h2><button class="primary">Update balances</button></div>
+        <div class="two">
+          <div class="card">
+            <h3>Total net worth</h3>
+            <div class="hero num">฿412,300</div>
+            <p class="delta">▲ ฿9,800 this month <span class="muted" style="font-weight:400">· ▲ ฿94,300 in 12 months</span></p>
+            <div class="chart" id="trend"><div class="tip"></div></div>
+          </div>
+          <div class="card">
+            <h3>By category</h3>
+            <div class="rank"><span>Investments</span><div class="bar"><i style="width:100%"></i></div><b class="num">฿231,000</b></div>
+            <div class="rank"><span>Bank and cash</span><div class="bar"><i style="width:64%"></i></div><b class="num">฿148,500</b></div>
+            <div class="rank"><span>Big assets</span><div class="bar"><i style="width:37%"></i></div><b class="num">฿85,000</b></div>
+            <div class="rank debt"><span>Debts</span><div class="bar"><i style="width:23%"></i></div><b class="num">-฿52,200</b></div>
+            <button class="ghost" style="margin-top:.8rem">+ Add category</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Accounts</h3>
+          <table>
+            <tr><th>Account</th><th>Category</th><th>Last updated</th><th class="r">Balance</th><th class="r">In THB</th></tr>
+            <tr><td>SCB savings</td><td class="muted">Bank and cash</td><td class="muted">2 days ago</td><td class="r num">฿131,200</td><td class="r num">฿131,200</td></tr>
+            <tr><td>TrueMoney wallet</td><td class="muted">Bank and cash</td><td class="muted">2 days ago</td><td class="r num">฿17,300</td><td class="r num">฿17,300</td></tr>
+            <tr><td>US brokerage</td><td class="muted">Investments</td><td class="muted">1 week ago</td><td class="r num">$2,400</td><td class="r num">฿78,000</td></tr>
+            <tr><td>Thai mutual funds</td><td class="muted">Investments</td><td class="muted">1 week ago</td><td class="r num">฿153,000</td><td class="r num">฿153,000</td></tr>
+            <tr><td>Motorbike</td><td class="muted">Big assets</td><td class="muted">3 months ago</td><td class="r num">฿85,000</td><td class="r num">฿85,000</td></tr>
+            <tr><td>Credit card</td><td class="muted">Debts</td><td class="muted">2 days ago</td><td class="r num">-฿52,200</td><td class="r num">-฿52,200</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div id="budget">
+        <div class="head"><h2>Budget · week of 16 Nov</h2><button class="primary">+ Add transaction</button></div>
+        <div class="tiles">
+          <div class="card tile"><h3>Left this week</h3><b class="num">฿2,770</b><span class="muted small">4 days left</span></div>
+          <div class="card tile"><h3>Weekly pay</h3><b class="num">฿5,000</b><span class="muted small">Editable</span></div>
+          <div class="card tile"><h3>Rolled over</h3><b class="num">+฿640</b><span class="muted small">From last week</span></div>
+          <div class="card tile"><h3>Spent</h3><b class="num">฿2,870</b><span class="muted small">12 transactions</span></div>
+        </div>
+        <div class="two">
+          <div class="card">
+            <h3>Categories (soft limits)</h3>
+            <div class="meter over"><span>Fun <span class="flag">▲ ฿200 over</span></span><span class="num small">฿700 / ฿500</span><div class="bar"><i style="width:100%"></i></div></div>
+            <div class="meter warn"><span>Food <span class="flag">! near limit</span></span><span class="num small">฿1,450 / ฿1,500</span><div class="bar"><i style="width:97%"></i></div></div>
+            <div class="meter"><span>Transport</span><span class="num small">฿420 / ฿600</span><div class="bar"><i style="width:70%"></i></div></div>
+            <div class="meter"><span>Bills</span><span class="num small">฿300 / ฿800</span><div class="bar"><i style="width:38%"></i></div></div>
+            <div class="meter"><span>Shopping</span><span class="num small">฿0 / ฿400</span><div class="bar"><i style="width:0"></i></div></div>
+          </div>
+          <div class="card">
+            <h3>Spent per week</h3>
+            <div class="weeks">
+              <div><span class="num">4.6k</span><i style="height:74%"></i>12 Oct</div>
+              <div><span class="num">5.3k</span><i style="height:85%"></i>19 Oct</div>
+              <div><span class="num">4.1k</span><i style="height:66%"></i>26 Oct</div>
+              <div><span class="num">4.9k</span><i style="height:78%"></i>2 Nov</div>
+              <div><span class="num">4.4k</span><i style="height:70%"></i>9 Nov</div>
+              <div><span class="num">2.9k</span><i style="height:46%"></i>This wk</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>This week's transactions</h3>
+          <table>
+            <tr><th>Date</th><th>Category</th><th>Note</th><th>Source</th><th class="r">Amount</th></tr>
+            <tr><td>Mon 16</td><td>Food</td><td class="muted">7-Eleven</td><td class="muted">Slip · SCB</td><td class="r num">-฿85</td></tr>
+            <tr><td>Mon 16</td><td>Transport</td><td class="muted">BTS</td><td class="muted">Manual</td><td class="r num">-฿47</td></tr>
+            <tr><td>Sun 15</td><td>Fun</td><td class="muted">Cinema</td><td class="muted">Slip · TrueMoney</td><td class="r num">-฿700</td></tr>
+            <tr><td>Sat 14</td><td>Income</td><td class="muted">Weekly pay</td><td class="muted">Manual</td><td class="r num">+฿5,000</td></tr>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+</div>
+
+<script>
+  // Theme / device / page switches
+  function seg(id, apply) {
+    const el = document.getElementById(id)
+    el.addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-v]'); if (!b) return
+      el.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b))
+      apply(b.dataset.v)
+    })
+  }
+  seg('themes', (v) => (document.body.dataset.theme = v))
+  seg('devices', (v) => document.querySelectorAll('.stage > section').forEach((s) => s.classList.toggle('on', s.id === v)))
+  seg('nav', (v) => document.querySelectorAll('.main > div').forEach((s) => s.classList.toggle('on', s.id === v)))
+
+  // Net worth trend: one line, hover crosshair + tooltip
+  const months = ['Dec','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov']
+  const values = [318000,324500,331200,329800,342000,351600,358900,371400,380200,391700,402500,412300]
+  const W = 640, H = 220, L = 46, R = 12, T = 12, B = 26, lo = 300000, hi = 420000
+  const x = (i) => L + (i * (W - L - R)) / (values.length - 1)
+  const y = (v) => T + (1 - (v - lo) / (hi - lo)) * (H - T - B)
+  const pts = values.map((v, i) => `${x(i)},${y(v)}`).join(' ')
+  const grid = [300000, 340000, 380000, 420000].map((g) =>
+    `<line x1="${L}" x2="${W - R}" y1="${y(g)}" y2="${y(g)}" stroke="var(--line)"/><text x="${L - 6}" y="${y(g) + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${g / 1000}k</text>`).join('')
+  const ticks = months.map((m, i) => i % 2 ? '' : `<text x="${x(i)}" y="${H - 6}" text-anchor="middle" font-size="11" fill="var(--muted)">${m}</text>`).join('')
+  const box = document.getElementById('trend'), tip = box.querySelector('.tip')
+  box.insertAdjacentHTML('afterbegin', `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Net worth over the last 12 months, rising from 318,000 to 412,300 baht">
+    ${grid}${ticks}
+    <polyline points="${pts}" fill="none" stroke="var(--mark)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <line id="cross" y1="${T}" y2="${H - B}" stroke="var(--muted)" stroke-dasharray="3 3" visibility="hidden"/>
+    <circle id="dot" r="5" fill="var(--mark)" stroke="var(--surface)" stroke-width="2" cx="${x(11)}" cy="${y(values[11])}"/>
+  </svg>`)
+  const svg = box.querySelector('svg'), cross = svg.querySelector('#cross'), dot = svg.querySelector('#dot')
+  svg.addEventListener('mousemove', (e) => {
+    const r = svg.getBoundingClientRect()
+    const px = ((e.clientX - r.left) / r.width) * W
+    const i = Math.max(0, Math.min(values.length - 1, Math.round(((px - L) / (W - L - R)) * (values.length - 1))))
+    cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i)); cross.setAttribute('visibility', 'visible')
+    dot.setAttribute('cx', x(i)); dot.setAttribute('cy', y(values[i]))
+    tip.style.display = 'block'
+    tip.style.left = (x(i) / W) * r.width + 'px'
+    tip.style.top = (y(values[i]) / H) * r.height + 'px'
+    tip.innerHTML = `<b>฿${values[i].toLocaleString()}</b> <span class="muted">${months[i]}</span>`
+  })
+  svg.addEventListener('mouseleave', () => {
+    cross.setAttribute('visibility', 'hidden'); tip.style.display = 'none'
+    dot.setAttribute('cx', x(11)); dot.setAttribute('cy', y(values[11]))
+  })
+</script>
+</body>
+</html>
