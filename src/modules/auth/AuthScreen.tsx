@@ -1,26 +1,38 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { signIn, signUp } from './authService'
+
+// The last username used on this device, so logging back in only needs the PIN.
+const LAST_USER = 'budgeter-last-username'
 
 export function AuthScreen() {
   const [mode, setMode] = useState<'in' | 'up'>('in')
-  const [username, setUsername] = useState('')
+  const [username, setUsername] = useState(() => localStorage.getItem(LAST_USER) ?? '')
   const [pin, setPin] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  async function submit(e: FormEvent) {
-    e.preventDefault()
+  async function submit(e?: FormEvent) {
+    e?.preventDefault()
+    if (busy) return
     setError(null)
     setBusy(true)
     try {
       if (mode === 'up') await signUp(username, pin)
       else await signIn(username, pin)
+      localStorage.setItem(LAST_USER, username.trim().toLowerCase())
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
+      setPin('')
     } finally {
       setBusy(false)
     }
   }
+
+  // Logging in: the moment the 6th digit is typed, go. No button press needed.
+  useEffect(() => {
+    if (mode === 'in' && pin.length === 6 && username.trim()) submit()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pin])
 
   return (
     <main className="auth">
@@ -38,6 +50,7 @@ export function AuthScreen() {
             type="password"
             inputMode="numeric"
             autoComplete={mode === 'up' ? 'new-password' : 'current-password'}
+            autoFocus={username !== ''}
           />
         </label>
         {error && <p className="error">{error}</p>}
