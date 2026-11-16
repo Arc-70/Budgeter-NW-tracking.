@@ -16,11 +16,6 @@
     --text:#0a0a0a; --muted:#44546a; --accent:#0a0a0a; --accent-ink:#dcecfb;
     --mark:#2468b4; --track:#d3e4f5; --good:#0f8a5f; --warn:#a86a00; --over:#c93030;
   }
-  body[data-theme="slate"] {
-    --bg:#0f172a; --surface:#1e293b; --raised:#273449; --line:#334155;
-    --text:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; --accent-ink:#082f49;
-    --mark:#38bdf8; --track:#2b3a50; --good:#3fc493; --warn:#e0a526; --over:#ee6b6b;
-  }
 
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,'Segoe UI',sans-serif; transition:background .2s,color .2s; }
@@ -119,7 +114,6 @@
   <span><b>Theme</b><span class="seg" id="themes">
     <button data-v="pastel-dark" class="on">Pastel blue on black</button>
     <button data-v="pastel-light">Black on pastel blue</button>
-    <button data-v="slate">Slate (current)</button>
   </span></span>
   <span><b>Device</b><span class="seg" id="devices">
     <button data-v="phone" class="on">Phone</button>
@@ -189,7 +183,7 @@
       <div class="frame">
         <div class="body">
           <h2>Check slip</h2>
-          <div class="slip"><div><b>SCB slip photo</b><p class="muted small">QR read · not a duplicate</p></div></div>
+          <div class="slip"><div><b>Slip photo</b><p class="muted small">Bank detected automatically · not a duplicate</p></div></div>
           <label class="field">Amount<div class="num">฿350.00</div></label>
           <label class="field">Paid to<div>ร้านข้าวมันไก่ป้าแดง</div></label>
           <label class="field">Date and time<div>16 Nov 2026, 12:41</div></label>
@@ -197,7 +191,7 @@
             <p class="muted small" style="margin-bottom:.4rem">Category</p>
             <div class="chips"><span class="on">Food</span><span>Transport</span><span>Bills</span><span>Other</span></div>
           </div>
-          <p class="muted small">Read from the slip on this phone. Fix anything that's wrong before saving.</p>
+          <p class="muted small">Read on this phone; the photo never leaves it. Works with SCB, Kasikorn (K PLUS and MAKE), Bangkok Bank and TrueMoney.</p>
           <button class="primary">Looks right, save</button>
           <button class="ghost">Scan again</button>
         </div>
@@ -243,7 +237,7 @@
           <h3>Accounts</h3>
           <table>
             <tr><th>Account</th><th>Category</th><th>Last updated</th><th class="r">Balance</th><th class="r">In THB</th></tr>
-            <tr><td>SCB savings</td><td class="muted">Bank and cash</td><td class="muted">2 days ago</td><td class="r num">฿131,200</td><td class="r num">฿131,200</td></tr>
+            <tr><td>Savings account</td><td class="muted">Bank and cash</td><td class="muted">2 days ago</td><td class="r num">฿131,200</td><td class="r num">฿131,200</td></tr>
             <tr><td>TrueMoney wallet</td><td class="muted">Bank and cash</td><td class="muted">2 days ago</td><td class="r num">฿17,300</td><td class="r num">฿17,300</td></tr>
             <tr><td>US brokerage</td><td class="muted">Investments</td><td class="muted">1 week ago</td><td class="r num">$2,400</td><td class="r num">฿78,000</td></tr>
             <tr><td>Thai mutual funds</td><td class="muted">Investments</td><td class="muted">1 week ago</td><td class="r num">฿153,000</td><td class="r num">฿153,000</td></tr>
@@ -286,9 +280,9 @@
           <h3>This week's transactions</h3>
           <table>
             <tr><th>Date</th><th>Category</th><th>Note</th><th>Source</th><th class="r">Amount</th></tr>
-            <tr><td>Mon 16</td><td>Food</td><td class="muted">7-Eleven</td><td class="muted">Slip · SCB</td><td class="r num">-฿85</td></tr>
+            <tr><td>Mon 16</td><td>Food</td><td class="muted">7-Eleven</td><td class="muted">Slip</td><td class="r num">-฿85</td></tr>
             <tr><td>Mon 16</td><td>Transport</td><td class="muted">BTS</td><td class="muted">Manual</td><td class="r num">-฿47</td></tr>
-            <tr><td>Sun 15</td><td>Fun</td><td class="muted">Cinema</td><td class="muted">Slip · TrueMoney</td><td class="r num">-฿700</td></tr>
+            <tr><td>Sun 15</td><td>Fun</td><td class="muted">Cinema</td><td class="muted">Slip</td><td class="r num">-฿700</td></tr>
             <tr><td>Sat 14</td><td>Income</td><td class="muted">Weekly pay</td><td class="muted">Manual</td><td class="r num">+฿5,000</td></tr>
           </table>
         </div>

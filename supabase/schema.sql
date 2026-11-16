@@ -67,3 +67,93 @@ end $$;
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created after insert on auth.users
   for each row execute function handle_new_user();
+
+-- ===================== Budget and net worth (added later) =====================
+
+alter table profiles add column if not exists week_start_day int not null default 1 check (week_start_day between 0 and 6);
+alter table profiles add column if not exists usd_rate numeric(10,4) not null default 33 check (usd_rate > 0);
+
+-- History of weekly pay, so past weeks keep the pay they had.
+create table if not exists pay_changes (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references auth.users on delete cascade,
+  effective_from date not null,
+  amount numeric(14,2) not null check (amount > 0),
+  unique (user_id, effective_from)
+);
+
+create table if not exists nw_categories (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references auth.users on delete cascade,
+  name text not null,
+  kind text not null default 'asset' check (kind in ('asset', 'liability')),
+  created_at timestamptz not null default now(),
+  unique (user_id, name)
+);
+
+create table if not exists nw_accounts (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references auth.users on delete cascade,
+  category_id uuid not null references nw_categories on delete cascade,
+  name text not null,
+  currency text not null default 'THB' check (currency in ('THB', 'USD')),
+  created_at timestamptz not null default now(),
+  unique (user_id, name)
+);
+
+-- One balance per account per day. Each update is kept, which gives the trend line.
+create table if not exists nw_balances (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references auth.users on delete cascade,
+  account_id uuid not null references nw_accounts on delete cascade,
+  date date not null,
+  balance numeric(16,2) not null check (balance >= 0),
+  unique (account_id, date)
+);
+
+alter table pay_changes enable row level security;
+alter table nw_categories enable row level security;
+alter table nw_accounts enable row level security;
+alter table nw_balances enable row level security;
+
+drop policy if exists "own pay changes" on pay_changes;
+create policy "own pay changes" on pay_changes for all
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+drop policy if exists "own nw categories" on nw_categories;
+create policy "own nw categories" on nw_categories for all
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+drop policy if exists "own nw accounts" on nw_accounts;
+create policy "own nw accounts" on nw_accounts for all
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+drop policy if exists "own nw balances" on nw_balances;
+create policy "own nw balances" on nw_balances for all
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- Starter net worth categories for new accounts (replaces the earlier version of this function).
+create or replace function handle_new_user() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  insert into profiles (id, username)
+  values (new.id, coalesce(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1)));
+
+  insert into categories (user_id, name)
+  select new.id, n from unnest(array['Food', 'Transport', 'Bills', 'Shopping', 'Fun', 'Other']) as n;
+
+  insert into nw_categories (user_id, name, kind) values
+    (new.id, 'Bank and cash', 'asset'),
+    (new.id, 'Investments', 'asset'),
+    (new.id, 'Big assets', 'asset'),
+    (new.id, 'Debts', 'liability');
+
+  return new;
+end $$;
+
+-- Give the same starter categories to accounts created before this update.
+insert into nw_categories (user_id, name, kind)
+select p.id, c.name, c.kind
+from profiles p
+cross join (values ('Bank and cash', 'asset'), ('Investments', 'asset'), ('Big assets', 'asset'), ('Debts', 'liability')) as c(name, kind)
+on conflict (user_id, name) do nothing;

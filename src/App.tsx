@@ -1,11 +1,24 @@
+import { useState } from 'react'
 import { isConfigured } from './config'
 import { AuthScreen } from './modules/auth/AuthScreen'
-import { signOut } from './modules/auth/authService'
 import { useSession } from './modules/auth/useSession'
+import { BudgetScreen } from './modules/budget/BudgetScreen'
+import { NetWorthScreen } from './modules/networth/NetWorthScreen'
+import { SettingsScreen } from './modules/settings/SettingsScreen'
 import { TransactionsScreen } from './modules/transactions/TransactionsScreen'
+
+type Page = 'week' | 'add' | 'networth' | 'settings'
+
+const PAGES: { id: Page; label: string }[] = [
+  { id: 'week', label: 'Week' },
+  { id: 'add', label: 'Add' },
+  { id: 'networth', label: 'Net worth' },
+  { id: 'settings', label: 'Settings' },
+]
 
 export function App() {
   const session = useSession()
+  const [page, setPage] = useState<Page>('week')
 
   if (!isConfigured) {
     return (
@@ -21,19 +34,22 @@ export function App() {
   if (session === null) return <AuthScreen />
 
   return (
-    <>
-      <header className="topbar">
+    <div className="shell">
+      {/* Sidebar on a PC, bottom tab bar on a phone (see styles.css). */}
+      <nav className="nav">
         <strong>Budgeter</strong>
-        <span>
-          {session.user.user_metadata.username}
-          <button className="link" onClick={signOut}>
-            Log out
+        {PAGES.map((p) => (
+          <button key={p.id} className={page === p.id ? 'on' : ''} onClick={() => setPage(p.id)}>
+            {p.label}
           </button>
-        </span>
-      </header>
+        ))}
+      </nav>
       <main className="page">
-        <TransactionsScreen />
+        {page === 'week' && <BudgetScreen onAdd={() => setPage('add')} />}
+        {page === 'add' && <TransactionsScreen />}
+        {page === 'networth' && <NetWorthScreen />}
+        {page === 'settings' && <SettingsScreen />}
       </main>
-    </>
+    </div>
   )
 }
