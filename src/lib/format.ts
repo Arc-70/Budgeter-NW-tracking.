@@ -1,6 +1,12 @@
 // Display helpers shared by every screen.
 
-export const todayISO = () => new Date().toLocaleDateString('en-CA') // YYYY-MM-DD, local time
+// Today's date as YYYY-MM-DD in the device's own time zone. Built by hand
+// because date formatting by locale is not identical across browsers.
+export function todayISO(): string {
+  const d = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
 
 export function money(n: number, currency: 'THB' | 'USD' = 'THB'): string {
   const symbol = currency === 'USD' ? '$' : '฿'

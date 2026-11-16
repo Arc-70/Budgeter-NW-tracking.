@@ -26,13 +26,13 @@ button { font: inherit; cursor: pointer; border: 0; }
 .note { border-left: 3px solid var(--warn); background: var(--raised); padding: 0.5rem 0.6rem; border-radius: 0.3rem; font-size: 0.82rem; }
 
 /* ---------- Layout: sidebar on PC, bottom tabs on phone ---------- */
-.shell { display: grid; grid-template-columns: 200px 1fr; min-height: 100vh; }
-.nav { background: var(--surface); border-right: 1px solid var(--line); padding: 1rem 0.75rem; display: flex; flex-direction: column; gap: 0.25rem; position: sticky; top: 0; height: 100vh; }
+.shell { display: grid; grid-template-columns: 200px 1fr; min-height: 100vh; min-height: 100dvh; }
+.nav { background: var(--surface); border-right: 1px solid var(--line); padding: 1rem 0.75rem; display: flex; flex-direction: column; gap: 0.25rem; position: sticky; top: 0; height: 100vh; height: 100dvh; }
 .nav strong { padding: 0.3rem 0.6rem 1rem; font-size: 1.05rem; }
 .nav button { text-align: left; background: none; color: var(--muted); padding: 0.55rem 0.6rem; border-radius: 0.5rem; }
 .nav button.on { background: var(--raised); color: var(--text); font-weight: 600; }
 .page { padding: 1.25rem; max-width: 1180px; width: 100%; margin: 0 auto; }
-.auth { min-height: 100vh; display: grid; place-items: center; padding: 1rem; }
+.auth { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 1rem; }
 .auth .card { width: 100%; max-width: 22rem; }
 
 .stack { display: grid; gap: 1rem; }
@@ -46,9 +46,10 @@ button { font: inherit; cursor: pointer; border: 0; }
   .shell { grid-template-columns: 1fr; }
   .nav { position: fixed; top: auto; bottom: 0; left: 0; right: 0; height: auto; z-index: 5; flex-direction: row; padding: 0; border-right: 0; border-top: 1px solid var(--line); }
   .nav strong { display: none; }
+  .nav { padding-bottom: env(safe-area-inset-bottom); padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
   .nav button { flex: 1; text-align: center; font-size: 0.75rem; padding: 0.8rem 0 0.9rem; border-radius: 0; }
   .nav button.on { background: none; box-shadow: inset 0 2px 0 var(--accent); }
-  .page { padding: 1rem 0.9rem 5rem; }
+  .page { padding: 1rem max(0.9rem, env(safe-area-inset-right)) calc(5rem + env(safe-area-inset-bottom)) max(0.9rem, env(safe-area-inset-left)); }
   .two, .two.wide-left, .two.form-left { grid-template-columns: 1fr; }
 }
 
@@ -133,3 +134,16 @@ label.ghost.file { color: var(--text); }
 .past { display: flex; flex-direction: column; gap: 0.5rem; border: 1px dashed var(--line); border-radius: 0.75rem; padding: 0.75rem; }
 input.tiny { width: 4rem; }
 .row.wrap > span.muted { flex: 0 0 auto; }
+
+/* ---------- iPhone / iPad (Safari) ---------- */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { -webkit-tap-highlight-color: transparent; }
+/* Safari zooms the whole page when a focused field's text is under 16px. */
+input, select, textarea { font-size: 16px; }
+/* Safari draws date fields short and centred unless told otherwise. */
+input[type='date'] { -webkit-appearance: none; appearance: none; min-height: 2.65rem; text-align: left; }
+input[type='date']::-webkit-date-and-time-value { text-align: left; }
+button, label.file { touch-action: manipulation; } /* no double-tap zoom delay on buttons */
+/* Hidden from view but still tappable through its label (display:none breaks that on iOS). */
+.visually-hidden { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; pointer-events: none; }
+label.file { position: relative; }

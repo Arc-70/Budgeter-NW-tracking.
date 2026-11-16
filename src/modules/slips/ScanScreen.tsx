@@ -90,7 +90,7 @@ export function ScanScreen() {
   const picker = (label: string, className: string) => (
     <label className={`${className} file`}>
       {label}
-      <input type="file" accept="image/*" onChange={pick} hidden />
+      <input className="visually-hidden" type="file" accept="image/*" onChange={pick} />
     </label>
   )
 

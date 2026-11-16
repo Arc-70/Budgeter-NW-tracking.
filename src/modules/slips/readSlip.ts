@@ -35,7 +35,8 @@ function readQr(canvas: HTMLCanvasElement): string | null {
 }
 
 export async function readSlip(file: Blob, today: string): Promise<SlipDraft> {
-  const image = await createImageBitmap(file)
+  // 'from-image' turns camera photos the right way up (iPhone photos are stored rotated).
+  const image = await createImageBitmap(file, { imageOrientation: 'from-image' })
   const scaled = draw(image, image.width >= 1000 && image.width <= 1600 ? image.width : TARGET_WIDTH)
 
   // Step 1: the QR code gives the bank and a unique reference (never the amount).
