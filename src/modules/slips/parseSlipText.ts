@@ -1,17 +1,17 @@
-// Finds the amount, date and recipient in the text that OCR read from a slip.
+// Finds the amount, date and transaction reference in the text that OCR read from a slip.
 // Pure logic: it looks for labels ("จำนวนเงิน", "Amount", ...) rather than fixed
 // positions, so one reader covers every bank's layout.
 
 export interface SlipText {
   amount: number | null
   date: string | null // YYYY-MM-DD
-  recipient: string | null
+  reference: string | null // printed transaction id, used to spot duplicates when there is no QR
 }
 
 const MONEY = /(\d{1,3}(?:,\d{3})+|\d+)\.\d{2}(?!\d)/
 const AMOUNT_LABEL = /จำนวน|amount|ยอดโอน|ยอดชำระ/i
 const NOT_AMOUNT = /ค่า|ธรรมเนียม|fee|คงเหลือ|remaining|balance/i
-const TO_LABEL = /^(ไปยัง|ไปที่|ถึง|To)(?=[\s:]|$)/
+const REF_LABEL = /transaction id|เลขที่รายการ|รหัสอ้างอิง|เลขที่อ้างอิง/i
 
 const EN_MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
 const TH_SHORT: Record<string, number> = {
@@ -81,25 +81,22 @@ export function findDate(lines: string[], today: string): string | null {
   return null
 }
 
-export function findRecipient(lines: string[]): string | null {
+// Only trusts a reference that reads as one clean run of letters and digits,
+// so a half-misread one never causes a false "already added".
+export function findReference(lines: string[]): string | null {
   for (let i = 0; i < lines.length; i++) {
-    const label = lines[i].match(TO_LABEL)
+    const label = lines[i].match(REF_LABEL)
     if (!label) continue
-    // Drop icon noise that OCR reads as stray symbols before the name.
-    const words = lines[i].slice(label[0].length).replace(/^[\s:]+/, '').split(/\s+/)
-    while (words.length && !/[A-Za-zก-๙]{3,}/.test(words[0])) words.shift()
-    let name = words.join(' ')
-    // Company names can wrap onto the next lines in capitals.
-    for (let j = i + 1; j <= i + 2 && j < lines.length; j++) {
-      if (!name || !/^[A-Z(][A-Z().,&\s-]+$/.test(lines[j])) break
-      name += ' ' + lines[j]
+    const sameLine = lines[i].slice(label.index! + label[0].length)
+    for (const candidate of [sameLine, lines[i + 1] ?? '']) {
+      const m = candidate.match(/(?:^|[\s:])([A-Za-z0-9]{12,})(?=\s|$)/)
+      if (m) return m[1]
     }
-    if (name) return name.slice(0, 60)
   }
   return null
 }
 
 export function parseSlipText(text: string, today: string): SlipText {
   const lines = normalize(text).split('\n').map((l) => l.trim()).filter(Boolean)
-  return { amount: findAmount(lines), date: findDate(lines, today), recipient: findRecipient(lines) }
+  return { amount: findAmount(lines), date: findDate(lines, today), reference: findReference(lines) }
 }

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { errorText, money, shortDate, todayISO } from '../../lib/format'
-import { loadBudgetData } from '../budget/budgetService'
-import { computeWeek } from '../budget/weekMath'
+import { LimitWarning, useWeekSpending } from '../budget/limitWarning'
+import { matchCategory, type Rule } from '../rules/matchCategory'
+import { listRules } from '../rules/rulesService'
 import { addTransaction, deleteTransaction, listCategories, listTransactions } from './transactionService'
 import type { Category, Transaction, TransactionType } from './types'
 
@@ -9,7 +10,10 @@ export function TransactionsScreen() {
   const [categories, setCategories] = useState<Category[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [error, setError] = useState<string | null>(null)
-  const [weekSpent, setWeekSpent] = useState<Map<string | null, number>>(new Map())
+  const [rules, setRules] = useState<Rule[]>([])
+  const [saves, setSaves] = useState(0)
+  const [pickedByHand, setPickedByHand] = useState(false)
+  const spending = useWeekSpending(saves)
 
   const [type, setType] = useState<TransactionType>('expense')
   const [amount, setAmount] = useState('')
@@ -19,11 +23,11 @@ export function TransactionsScreen() {
 
   const reload = useCallback(async () => {
     try {
-      const [cats, txs, budget] = await Promise.all([listCategories(), listTransactions(), loadBudgetData()])
+      const [cats, txs, rs] = await Promise.all([listCategories(), listTransactions(), listRules()])
       setCategories(cats)
       setTransactions(txs)
-      const week = computeWeek(budget.payChanges, budget.txs, budget.weekStartDay, todayISO())
-      setWeekSpent(week ? week.spentByCategory : new Map())
+      setRules(rs)
+      setSaves((n) => n + 1)
       setError(null)
     } catch (err) {
       setError(errorText(err, 'Could not load data'))
@@ -46,6 +50,7 @@ export function TransactionsScreen() {
       })
       setAmount('')
       setNote('')
+      setPickedByHand(false)
       await reload()
     } catch (err) {
       setError(errorText(err, 'Could not save'))
@@ -62,10 +67,11 @@ export function TransactionsScreen() {
     }
   }
 
-  // Soft limit: warn if this expense would push the category over, but never block it.
-  const picked = categories.find((c) => c.id === categoryId)
-  const projected = (weekSpent.get(categoryId) ?? 0) + (Number(amount) || 0)
-  const overBy = type === 'expense' && picked?.weekly_limit && Number(amount) > 0 ? projected - picked.weekly_limit : 0
+  // Keyword rules: typing a note picks the category, unless one was chosen by hand.
+  function changeNote(value: string) {
+    setNote(value)
+    if (!pickedByHand) setCategoryId(matchCategory(value, rules) ?? '')
+  }
 
   const categoryName = (id: string | null) => categories.find((c) => c.id === id)?.name ?? '—'
 
@@ -88,7 +94,13 @@ export function TransactionsScreen() {
         {type === 'expense' && (
           <label>
             Category
-            <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+            <select
+              value={categoryId}
+              onChange={(e) => {
+                setCategoryId(e.target.value)
+                setPickedByHand(true)
+              }}
+            >
               <option value="">Uncategorised</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -104,12 +116,10 @@ export function TransactionsScreen() {
         </label>
         <label>
           Note
-          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional" />
+          <input value={note} onChange={(e) => changeNote(e.target.value)} placeholder="Optional" />
         </label>
-        {overBy > 0 && picked && (
-          <p className="note">
-            {picked.name} will be {money(overBy)} over its {money(picked.weekly_limit!)} limit this week. You can still save.
-          </p>
+        {type === 'expense' && (
+          <LimitWarning spending={spending} category={categories.find((c) => c.id === categoryId)} amount={Number(amount)} date={date} />
         )}
         {error && <p className="error">{error}</p>}
         <button className="primary">Save</button>

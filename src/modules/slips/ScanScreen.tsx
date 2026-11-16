@@ -1,5 +1,8 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { errorText, todayISO } from '../../lib/format'
+import { LimitWarning, useWeekSpending } from '../budget/limitWarning'
+import { matchCategory, type Rule } from '../rules/matchCategory'
+import { listRules } from '../rules/rulesService'
 import { addSlipTransaction, listCategories, slipAlreadyAdded } from '../transactions/transactionService'
 import type { Category } from '../transactions/types'
 import { readSlip, type SlipDraft } from './readSlip'
@@ -20,10 +23,27 @@ export function ScanScreen() {
   const [date, setDate] = useState(todayISO())
   const [categoryId, setCategoryId] = useState('')
   const [note, setNote] = useState('')
+  const [rules, setRules] = useState<Rule[]>([])
+  const [pickedByHand, setPickedByHand] = useState(false)
+  const [saves, setSaves] = useState(0)
+  const spending = useWeekSpending(saves)
 
   useEffect(() => {
-    listCategories().then(setCategories).catch((err) => setError(errorText(err, 'Could not load categories')))
+    Promise.all([listCategories(), listRules()])
+      .then(([cats, rs]) => {
+        setCategories(cats)
+        setRules(rs)
+      })
+      .catch((err) => setError(errorText(err, 'Could not load categories')))
   }, [])
+
+  // Keyword rules: your note is checked first, then the words on the slip itself.
+  const suggest = (noteText: string, slipText: string) => matchCategory(noteText, rules) ?? matchCategory(slipText, rules) ?? ''
+
+  function changeNote(value: string) {
+    setNote(value)
+    if (!pickedByHand && draft) setCategoryId(suggest(value, draft.text))
+  }
 
   async function pick(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -39,7 +59,9 @@ export function ScanScreen() {
       setDraft(result)
       setAmount(result.amount === null ? '' : String(result.amount))
       setDate(result.date ?? todayISO())
-      setNote(result.recipient ?? '')
+      setNote('')
+      setPickedByHand(false)
+      setCategoryId(suggest('', result.text))
       setDuplicate(result.dedupeKey ? await slipAlreadyAdded(result.dedupeKey) : false)
       setStage('confirm')
     } catch (err) {
@@ -56,6 +78,7 @@ export function ScanScreen() {
         { type: 'expense', amount: Number(amount), date, category_id: categoryId || null, note: note.trim() || null },
         draft.dedupeKey,
       )
+      setSaves((n) => n + 1)
       setMessage('Saved. Scan another slip whenever you like.')
       setDraft(null)
       setStage('pick')
@@ -93,7 +116,11 @@ export function ScanScreen() {
           <p className="small">
             <b>{draft.bank ?? 'Bank not recognised'}</b>
             <span className="muted">
-              {draft.dedupeKey ? ' · QR read' : ' · no QR found, so duplicates cannot be checked'}
+              {!draft.dedupeKey
+                ? ' · no QR or transaction ID found, so duplicates cannot be checked'
+                : draft.dedupeKey.startsWith('TXT:')
+                  ? ' · no QR, using the printed transaction ID to spot duplicates'
+                  : ' · QR read'}
             </span>
           </p>
           {duplicate && <p className="note">This slip has already been added. Saving it again will be refused.</p>}
@@ -109,7 +136,13 @@ export function ScanScreen() {
           </label>
           <label>
             Category
-            <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+            <select
+              value={categoryId}
+              onChange={(e) => {
+                setCategoryId(e.target.value)
+                setPickedByHand(true)
+              }}
+            >
               <option value="">Uncategorised</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -119,9 +152,10 @@ export function ScanScreen() {
             </select>
           </label>
           <label>
-            Note (paid to)
-            <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional" />
+            Note
+            <input value={note} onChange={(e) => changeNote(e.target.value)} placeholder="Optional, for yourself" />
           </label>
+          <LimitWarning spending={spending} category={categories.find((c) => c.id === categoryId)} amount={Number(amount)} date={date} />
           <p className="muted small">Read on this device. Fix anything that's wrong before saving.</p>
           {error && <p className="error">{error}</p>}
           <button className="primary" disabled={duplicate}>

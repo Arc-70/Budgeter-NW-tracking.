@@ -157,3 +157,20 @@ select p.id, c.name, c.kind
 from profiles p
 cross join (values ('Bank and cash', 'asset'), ('Investments', 'asset'), ('Big assets', 'asset'), ('Debts', 'liability')) as c(name, kind)
 on conflict (user_id, name) do nothing;
+
+-- ===================== Keyword rules (added later) =====================
+-- "If the note or slip mentions this keyword, use this category."
+create table if not exists category_rules (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references auth.users on delete cascade,
+  keyword text not null,
+  category_id uuid not null references categories on delete cascade,
+  created_at timestamptz not null default now(),
+  unique (user_id, keyword)
+);
+
+alter table category_rules enable row level security;
+
+drop policy if exists "own category rules" on category_rules;
+create policy "own category rules" on category_rules for all
+  using (user_id = auth.uid()) with check (user_id = auth.uid());

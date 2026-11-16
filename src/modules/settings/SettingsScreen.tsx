@@ -4,6 +4,8 @@ import { applyTheme, getTheme, type Theme } from '../../lib/theme'
 import { signOut } from '../auth/authService'
 import { listPayChanges } from '../budget/budgetService'
 import { addDays, payForWeek, weekStartOf } from '../budget/weekMath'
+import type { Rule } from '../rules/matchCategory'
+import { addRule, deleteRule, listRules } from '../rules/rulesService'
 import { listCategories } from '../transactions/transactionService'
 import type { Category } from '../transactions/types'
 import {
@@ -23,10 +25,14 @@ export function SettingsScreen() {
   const [payFrom, setPayFrom] = useState<'this' | 'next'>('this')
   const [rate, setRate] = useState('')
   const [newCategory, setNewCategory] = useState('')
+  const [rules, setRules] = useState<Rule[]>([])
+  const [keyword, setKeyword] = useState('')
+  const [keywordCategory, setKeywordCategory] = useState('')
 
   const reload = useCallback(async () => {
     try {
-      const [p, pays, cats] = await Promise.all([getProfile(), listPayChanges(), listCategories()])
+      const [p, pays, cats, rs] = await Promise.all([getProfile(), listPayChanges(), listCategories(), listRules()])
+      setRules(rs)
       setProfile(p)
       setRate(String(p.usd_rate))
       setCurrentPay(payForWeek(pays, weekStartOf(todayISO(), p.week_start_day)))
@@ -159,6 +165,46 @@ export function SettingsScreen() {
                 await addCategory(newCategory)
                 setNewCategory('')
               }, 'Category added')
+            }
+          >
+            Add
+          </button>
+        </div>
+      </div>
+
+      <div className="card">
+        <h3>Auto-categorise by keyword</h3>
+        <p className="muted small">
+          When a note you type, or the text on a scanned slip, contains a keyword, the category is picked for you. You can
+          still change it before saving.
+        </p>
+        {rules.map((r) => (
+          <div className="row" key={r.id}>
+            <span>
+              “{r.keyword}” → {categories.find((c) => c.id === r.category_id)?.name ?? '?'}
+            </span>
+            <button className="link" aria-label={`Delete keyword ${r.keyword}`} onClick={() => run(() => deleteRule(r.id), 'Keyword removed')}>
+              ✕
+            </button>
+          </div>
+        ))}
+        <div className="row wrap">
+          <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="Keyword, e.g. 7-eleven" />
+          <select value={keywordCategory} onChange={(e) => setKeywordCategory(e.target.value)} aria-label="Category for keyword">
+            <option value="">Category…</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+          <button
+            className="ghost inline"
+            onClick={() =>
+              run(async () => {
+                await addRule(keyword, keywordCategory)
+                setKeyword('')
+              }, 'Keyword added')
             }
           >
             Add

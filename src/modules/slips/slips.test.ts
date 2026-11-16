@@ -35,22 +35,26 @@ describe('parseSlipQr', () => {
 describe('parseSlipText', () => {
   it('reads a K PLUS slip in English', () => {
     const text = `Transfer Completed\n6Mar 19 2:46 PM\nMR. Kasikorn R\nKBank\nMR. Testsam Kasikorn\nTransaction ID:\n019065144648708170 [MITE HEE]\nAmount:                            [bags\n5,000.00 Baht รู่\n0.00 Baht Verified by K+\nRemaining ชิล1.: 789,281.03 Baht\nBack               Share\nto Banking                      Favorite       Schedule`
-    expect(parseSlipText(text, TODAY)).toEqual({ amount: 5000, date: '2019-03-06', recipient: null })
+    expect(parseSlipText(text, TODAY)).toEqual({ amount: 5000, date: '2019-03-06', reference: '019065144648708170' })
   })
 
   it('reads a K PLUS slip in Thai with a Buddhist year', () => {
     const text = `โอนเงินสําเร็จ\n18 ส.ุค. 61 8:55 น.\nธ.กสิกรไทย\nเลขที่รายการ:\n123456789012345678\nจํานวน:\n50,000.00 บาท\nค่าธรรมเนียม:\n0.00 บาท verified by K+\nยอดเงินคงเหลือ: 83,888.00 บาท`
-    expect(parseSlipText(text, TODAY)).toEqual({ amount: 50000, date: '2018-08-18', recipient: null })
+    expect(parseSlipText(text, TODAY)).toEqual({ amount: 50000, date: '2018-08-18', reference: '123456789012345678' })
   })
 
   it('reads a Bangkok Bank slip', () => {
     const text = `Q Bangkok Bank\nรายการสําเร็จ\n28 พ.ุย. 68,12:07\nจํานวนเงิน\n393.00 ากร\nจาก        (0)\nธนาคารกรุงเทพ\nไปที่        2 SHOPEEPAY\n(THAILAND)\nCO.,LTD\nBiller\nค่า           0.00 THB\nธรรมเนียม`
-    expect(parseSlipText(text, TODAY)).toEqual({ amount: 393, date: '2025-11-28', recipient: 'SHOPEEPAY (THAILAND) CO.,LTD' })
+    expect(parseSlipText(text, TODAY)).toEqual({ amount: 393, date: '2025-11-28', reference: null })
   })
 
   it('reads an SCB slip', () => {
     const text = `@ โอนเงินสําเร็จ\n02 พพ.ย. 2565 - 11:34\nจาก                 @ นางสาว สุวภัทร ดอกแย้ม\nXXX-XXX721-6\nไปยัง                          @ นาย ธนากร ขวัญพูล\n%-1047\nจํานวนเงิน                                                           1,000.00`
-    expect(parseSlipText(text, TODAY)).toEqual({ amount: 1000, date: '2022-11-02', recipient: 'นาย ธนากร ขวัญพูล' })
+    expect(parseSlipText(text, TODAY)).toEqual({ amount: 1000, date: '2022-11-02', reference: null })
+  })
+
+  it('ignores a reference that was only partly readable', () => {
+    expect(parseSlipText('รหัสอ้างอิง: 2022110227(ผ086!แส่6พธหมงร', TODAY).reference).toBeNull()
   })
 
   it('never mistakes the fee or remaining balance for the amount', () => {
