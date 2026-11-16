@@ -1,28 +1,22 @@
 import { useCallback, useEffect, useState } from 'react'
-import { errorText, money, todayISO } from '../../lib/format'
+import { errorText } from '../../lib/format'
 import { applyTheme, getTheme, type Theme } from '../../lib/theme'
 import { signOut } from '../auth/authService'
-import { listPayChanges } from '../budget/budgetService'
-import { addDays, payForWeek, weekStartOf } from '../budget/weekMath'
+import { PayPlanCard } from '../budget/PayPlanCard'
 import type { Rule } from '../rules/matchCategory'
 import { addRule, deleteRule, listRules } from '../rules/rulesService'
 import { listCategories } from '../transactions/transactionService'
 import type { Category } from '../transactions/types'
 import {
-  addCategory, deleteCategory, getProfile, setCategoryLimit, setWeeklyPay, updateProfile, type Profile,
+  addCategory, deleteCategory, getProfile, setCategoryLimit, updateProfile, type Profile,
 } from './settingsService'
-
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 export function SettingsScreen() {
   const [theme, setTheme] = useState<Theme>(getTheme())
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [currentPay, setCurrentPay] = useState(0)
   const [categories, setCategories] = useState<Category[]>([])
   const [message, setMessage] = useState<string | null>(null)
 
-  const [pay, setPay] = useState('')
-  const [payFrom, setPayFrom] = useState<'this' | 'next'>('this')
   const [rate, setRate] = useState('')
   const [newCategory, setNewCategory] = useState('')
   const [rules, setRules] = useState<Rule[]>([])
@@ -31,11 +25,10 @@ export function SettingsScreen() {
 
   const reload = useCallback(async () => {
     try {
-      const [p, pays, cats, rs] = await Promise.all([getProfile(), listPayChanges(), listCategories(), listRules()])
+      const [p, cats, rs] = await Promise.all([getProfile(), listCategories(), listRules()])
       setRules(rs)
       setProfile(p)
       setRate(String(p.usd_rate))
-      setCurrentPay(payForWeek(pays, weekStartOf(todayISO(), p.week_start_day)))
       setCategories(cats)
     } catch (err) {
       setMessage(errorText(err, 'Could not load settings'))
@@ -58,8 +51,6 @@ export function SettingsScreen() {
   }
 
   if (!profile) return <p className="muted">{message ?? 'Loading…'}</p>
-
-  const thisWeek = weekStartOf(todayISO(), profile.week_start_day)
 
   return (
     <div className="stack narrow">
@@ -84,45 +75,7 @@ export function SettingsScreen() {
         </div>
       </div>
 
-      <div className="card">
-        <h3>Weekly pay</h3>
-        <p className="muted small">Currently {money(currentPay)} a week. Earlier weeks keep the pay they had.</p>
-        <label>
-          New weekly pay (THB)
-          <input value={pay} onChange={(e) => setPay(e.target.value)} type="number" inputMode="decimal" min="1" step="0.01" />
-        </label>
-        <label>
-          Starts
-          <select value={payFrom} onChange={(e) => setPayFrom(e.target.value as 'this' | 'next')}>
-            <option value="this">This week</option>
-            <option value="next">Next week</option>
-          </select>
-        </label>
-        <button
-          className="primary"
-          onClick={() =>
-            run(async () => {
-              await setWeeklyPay(Number(pay), payFrom === 'this' ? thisWeek : addDays(thisWeek, 7))
-              setPay('')
-            }, 'Weekly pay saved')
-          }
-        >
-          Save pay
-        </button>
-        <label>
-          Day you get paid
-          <select
-            value={profile.week_start_day}
-            onChange={(e) => run(() => updateProfile({ week_start_day: Number(e.target.value) }), 'Payday saved')}
-          >
-            {DAYS.map((d, i) => (
-              <option key={d} value={i}>
-                {d}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
+      <PayPlanCard />
 
       <div className="card">
         <h3>Spending categories</h3>

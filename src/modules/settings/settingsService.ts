@@ -2,7 +2,7 @@ import { supabase } from '../../lib/supabase'
 
 export interface Profile {
   username: string
-  week_start_day: number // 0 = Sunday ... 6 = Saturday
+  week_start_day: number // 0 = Sunday ... 6 = Saturday; only used when there is no weekly pay
   usd_rate: number // THB per 1 USD, typed in by the user
 }
 
@@ -21,15 +21,6 @@ export async function getProfile(): Promise<Profile> {
 export async function updateProfile(changes: Partial<Pick<Profile, 'week_start_day' | 'usd_rate'>>): Promise<void> {
   if (changes.usd_rate !== undefined && !(changes.usd_rate > 0)) throw new Error('Rate must be more than 0')
   const { error } = await supabase.from('profiles').update(changes).eq('id', await userId())
-  if (error) throw new Error(error.message)
-}
-
-// Pay is stored as a history of changes so past weeks keep the pay they had.
-export async function setWeeklyPay(amount: number, effectiveFrom: string): Promise<void> {
-  if (!(amount > 0)) throw new Error('Weekly pay must be more than 0')
-  const { error } = await supabase
-    .from('pay_changes')
-    .upsert({ user_id: await userId(), effective_from: effectiveFrom, amount }, { onConflict: 'user_id,effective_from' })
   if (error) throw new Error(error.message)
 }
 

@@ -174,3 +174,66 @@ alter table category_rules enable row level security;
 drop policy if exists "own category rules" on category_rules;
 create policy "own category rules" on category_rules for all
   using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- ===================== Pay plans and the cash pot (added later) =====================
+
+-- One line of a pay plan. Weekly pay arrives every 7 days from start_date;
+-- monthly pay on the same day of the month as start_date.
+create table if not exists pay_rules (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references auth.users on delete cascade,
+  amount numeric(14,2) not null check (amount > 0),
+  interval text not null check (interval in ('weekly', 'monthly')),
+  start_date date not null,
+  end_date date,
+  created_at timestamptz not null default now()
+);
+
+-- "I have this much money as of this date." The pot is counted from the newest one.
+create table if not exists balance_resets (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references auth.users on delete cascade,
+  date date not null,
+  amount numeric(14,2) not null,
+  created_at timestamptz not null default now(),
+  unique (user_id, date)
+);
+
+alter table pay_rules enable row level security;
+alter table balance_resets enable row level security;
+
+drop policy if exists "own pay rules" on pay_rules;
+create policy "own pay rules" on pay_rules for all
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+drop policy if exists "own balance resets" on balance_resets;
+create policy "own balance resets" on balance_resets for all
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- Carry over weekly pay set up before pay plans existed (only for people with no plan yet).
+insert into pay_rules (user_id, amount, interval, start_date, end_date)
+select user_id, amount, 'weekly', effective_from,
+       (lead(effective_from) over (partition by user_id order by effective_from)) - 1
+from pay_changes pc
+where not exists (select 1 from pay_rules pr where pr.user_id = pc.user_id);
+
+-- ===================== Net worth history (added later) =====================
+
+-- Closed accounts leave the current list but stay in history before this date.
+alter table nw_accounts add column if not exists closed_on date;
+
+-- A frozen date, kept as its own column in the history table, with that day's USD rate.
+create table if not exists nw_snapshots (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references auth.users on delete cascade,
+  date date not null,
+  usd_rate numeric(10,4) not null check (usd_rate > 0),
+  created_at timestamptz not null default now(),
+  unique (user_id, date)
+);
+
+alter table nw_snapshots enable row level security;
+
+drop policy if exists "own nw snapshots" on nw_snapshots;
+create policy "own nw snapshots" on nw_snapshots for all
+  using (user_id = auth.uid()) with check (user_id = auth.uid());

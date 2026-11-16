@@ -14,3 +14,8 @@ export function shortDate(iso: string): string {
 }
 
 export const errorText = (err: unknown, fallback: string) => (err instanceof Error ? err.message : fallback)
+
+// "20 Nov 26" - used where the year matters (history, pay plans).
+export function dateWithYear(iso: string): string {
+  return new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })
+}

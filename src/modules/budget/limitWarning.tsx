@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import { money, todayISO } from '../../lib/format'
 import type { Category } from '../transactions/types'
-import { loadBudgetData } from './budgetService'
-import { computeWeek } from './weekMath'
+import { loadBudgetData, potFor } from './budgetService'
 
 export interface WeekSpending {
   weekStart: string
@@ -15,7 +14,7 @@ export function useWeekSpending(refreshKey = 0): WeekSpending | null {
   const [spending, setSpending] = useState<WeekSpending | null>(null)
   useEffect(() => {
     loadBudgetData()
-      .then((d) => setSpending(computeWeek(d.payChanges, d.txs, d.weekStartDay, todayISO())))
+      .then((d) => setSpending(potFor(d, todayISO())))
       .catch(() => setSpending(null)) // the warning is a nicety; never block entry over it
   }, [refreshKey])
   return spending

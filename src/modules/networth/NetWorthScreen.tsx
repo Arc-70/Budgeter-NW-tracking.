@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
-import { errorText, money, shortDate, todayISO } from '../../lib/format'
+import { dateWithYear, errorText, money, shortDate, todayISO } from '../../lib/format'
+import { HistoryTable } from './HistoryTable'
 import { series, summarize, type AccountRow, type Currency } from './netWorthMath'
 import {
-  addAccount, addNwCategory, deleteAccount, deleteNwCategory, loadNetWorth, setBalance, type NetWorthData,
+  addAccount, addNwCategory, closeAccount, deleteAccount, deleteNwCategory, deleteSnapshot, freezeSnapshot, loadNetWorth, setBalance,
+  type NetWorthData,
 } from './netWorthService'
 import { TrendChart } from './TrendChart'
 
@@ -105,6 +107,7 @@ export function NetWorthScreen() {
                   key={row.account.id}
                   row={row}
                   onSave={(balance) => run(() => setBalance(row.account.id, todayISO(), balance))}
+                  onClose={(date) => run(() => closeAccount(row.account.id, date))}
                   onDelete={() => run(() => deleteAccount(row.account.id))}
                 />
               ))}
@@ -122,14 +125,46 @@ export function NetWorthScreen() {
         />
         <p className="muted small">
           For debts, type the amount you owe as a positive number. USD is converted at ฿{data.usdRate} per $1 (change it in Settings).
+          Close keeps an account in your history; ✕ deletes it and its history.
         </p>
+        {data.accounts.filter((a) => a.closed_on).map((a) => (
+          <div className="row muted small" key={a.id}>
+            <span>
+              {a.name} · closed {dateWithYear(a.closed_on!)}
+            </span>
+            <button className="ghost inline" onClick={() => run(() => closeAccount(a.id, null))}>
+              Reopen
+            </button>
+            <button
+              className="link"
+              aria-label={`Delete ${a.name}`}
+              onClick={() => {
+                if (confirm(`Delete "${a.name}" and its history for good?`)) run(() => deleteAccount(a.id))
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        ))}
       </div>
+
+      <HistoryTable
+        data={data}
+        onFreeze={(date, rate, typed, carryForward) => run(() => freezeSnapshot(data, date, rate, typed, carryForward))}
+        onUnfreeze={(id) => run(() => deleteSnapshot(id))}
+      />
     </div>
   )
 }
 
-function Account({ row, onSave, onDelete }: { row: AccountRow; onSave: (balance: number) => void; onDelete: () => void }) {
+function Account({ row, onSave, onClose, onDelete }: {
+  row: AccountRow
+  onSave: (balance: number) => void
+  onClose: (date: string) => void
+  onDelete: () => void
+}) {
   const [value, setValue] = useState('')
+  const [closing, setClosing] = useState<string | null>(null) // the closing date being chosen
   const { account, category } = row
   return (
     <tr>
@@ -161,6 +196,18 @@ function Account({ row, onSave, onDelete }: { row: AccountRow; onSave: (balance:
           >
             Save
           </button>
+          {closing === null ? (
+            <button className="ghost inline" onClick={() => setClosing(todayISO())}>
+              Close
+            </button>
+          ) : (
+            <>
+              <input type="date" value={closing} max={todayISO()} onChange={(e) => setClosing(e.target.value)} aria-label={`Closing date for ${account.name}`} />
+              <button className="ghost inline" onClick={() => onClose(closing)}>
+                OK
+              </button>
+            </>
+          )}
           <button
             className="link"
             aria-label={`Delete ${account.name}`}

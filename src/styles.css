@@ -121,3 +121,13 @@ td { padding: 0.5rem; border-top: 1px solid var(--line); white-space: nowrap; }
 label.primary.file { color: var(--accent-ink); }
 label.ghost.file { color: var(--text); }
 .slip-img { max-height: 220px; max-width: 100%; align-self: center; border-radius: 0.6rem; border: 1px solid var(--line); }
+
+/* ---------- Net worth history table ---------- */
+.history th:first-child { position: sticky; left: 0; background: var(--surface); text-align: left; font-weight: 400; color: var(--text); font-size: 0.9rem; border-top: 1px solid var(--line); }
+.history thead th { vertical-align: bottom; }
+.history thead th:first-child { border-top: 0; color: var(--muted); font-size: 0.78rem; }
+.history thead th div { font-weight: 400; font-size: 0.7rem; }
+.history .group th { color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; padding-top: 0.8rem; }
+.history .total th, .history .total td { font-weight: 600; background: var(--raised); }
+.history .grand th, .history .grand td { font-weight: 700; background: var(--raised); }
+.past { display: flex; flex-direction: column; gap: 0.5rem; border: 1px dashed var(--line); border-radius: 0.75rem; padding: 0.75rem; }
