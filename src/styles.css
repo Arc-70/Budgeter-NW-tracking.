@@ -147,3 +147,9 @@ button, label.file { touch-action: manipulation; } /* no double-tap zoom delay o
 /* Hidden from view but still tappable through its label (display:none breaks that on iOS). */
 .visually-hidden { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; pointer-events: none; }
 label.file { position: relative; }
+
+/* ---------- Info tips ---------- */
+.info { display: inline-block; margin-left: 0.35rem; vertical-align: middle; text-transform: none; letter-spacing: 0; font-weight: 400; }
+.info-btn { width: 1.15rem; height: 1.15rem; border-radius: 50%; border: 1px solid var(--muted); background: none; color: var(--muted); font-size: 0.7rem; font-weight: 700; font-family: Georgia, serif; font-style: italic; line-height: 1; padding: 0; display: inline-grid; place-items: center; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
+.info-btn:hover, .info-btn[aria-expanded='true'] { color: var(--text); border-color: var(--text); }
+.info-pop { position: fixed; z-index: 50; background: var(--raised); border: 1px solid var(--line); border-radius: 0.5rem; padding: 0.55rem 0.7rem; font-size: 0.82rem; line-height: 1.4; color: var(--text); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35); text-align: left; }

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { errorText } from '../../lib/format'
 import { applyTheme, getTheme, type Theme } from '../../lib/theme'
 import { signOut } from '../auth/authService'
+import { Info } from '../../components/Info'
 import { PayPlanCard } from '../budget/PayPlanCard'
 import type { Rule } from '../rules/matchCategory'
 import { addRule, deleteRule, listRules } from '../rules/rulesService'
@@ -78,8 +79,10 @@ export function SettingsScreen() {
       <PayPlanCard />
 
       <div className="card">
-        <h3>Spending categories</h3>
-        <p className="muted small">Limits are suggestions, per week or per calendar month. Leave a limit empty for none.</p>
+        <h3>
+          Spending categories
+          <Info>Limits only warn you, per week or per calendar month. Leave a limit empty for none.</Info>
+        </h3>
         {categories.map((c) => (
           <div className="row" key={c.id}>
             <span>{c.name}</span>
@@ -134,11 +137,13 @@ export function SettingsScreen() {
       </div>
 
       <div className="card">
-        <h3>Auto-categorise by keyword</h3>
-        <p className="muted small">
-          When a note you type, or the text on a scanned slip, contains a keyword, the category is picked for you. You can
-          still change it before saving.
-        </p>
+        <h3>
+          Auto-categorise by keyword
+          <Info>
+            When a note you type, or the text on a scanned slip, contains a keyword, the category is picked for you. You can still
+            change it before saving.
+          </Info>
+        </h3>
         {rules.map((r) => (
           <div className="row" key={r.id}>
             <span>
@@ -174,8 +179,10 @@ export function SettingsScreen() {
       </div>
 
       <div className="card">
-        <h3>US dollar rate</h3>
-        <p className="muted small">Used to show USD accounts in baht. Update it whenever you like.</p>
+        <h3>
+          US dollar rate
+          <Info>Used to show USD accounts in baht. Update it whenever you like.</Info>
+        </h3>
         <div className="row">
           <span>฿ per $1</span>
           <input className="short" value={rate} onChange={(e) => setRate(e.target.value)} type="number" inputMode="decimal" min="0" step="0.01" />

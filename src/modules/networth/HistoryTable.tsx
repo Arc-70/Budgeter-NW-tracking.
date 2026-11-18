@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { dateWithYear, money, todayISO } from '../../lib/format'
+import { Info } from '../../components/Info'
 import { buildHistory, type HistoryColumn } from './netWorthMath'
 import type { NetWorthData } from './netWorthService'
 
@@ -45,7 +46,13 @@ export function HistoryTable({
   return (
     <div className="card">
       <div className="head">
-        <h3>History</h3>
+        <h3>
+          History
+          <Info>
+            Each month gets a column automatically, using the balances as they stood at its end. Freeze a date to keep it as its own
+            fixed column for comparing later.
+          </Info>
+        </h3>
         <div className="row tight">
           <button
             className="ghost inline"
@@ -59,10 +66,6 @@ export function HistoryTable({
           </button>
         </div>
       </div>
-      <p className="muted small">
-        Each month gets a column automatically, using the balances as they stood at its end. Freeze a date to keep it as its own
-        fixed column for comparing later.
-      </p>
 
       {adding && <PastSnapshot data={data} onSave={(...args) => { onFreeze(...args); setAdding(false) }} />}
 
@@ -155,7 +158,13 @@ function PastSnapshot({
     <div className="past">
       <div className="row wrap">
         <label>
-          Date
+          <span>
+            Date
+            <Info>
+              Leave an account empty if it had no balance yet, or to keep whatever it was before that date. Add accounts you no
+              longer have first, then close them.
+            </Info>
+          </span>
           <input type="date" value={date} max={todayISO()} onChange={(e) => setDate(e.target.value)} />
         </label>
         <label>
@@ -179,10 +188,6 @@ function PastSnapshot({
           />
         </div>
       ))}
-      <p className="muted small">
-        Leave an account empty if it had no balance yet, or to keep whatever it was before that date. Add accounts you no longer
-        have first, then close them.
-      </p>
       <button
         className="primary"
         disabled={date === ''}

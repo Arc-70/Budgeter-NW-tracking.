@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { dateWithYear, errorText, money, todayISO } from '../../lib/format'
+import { Info } from '../../components/Info'
 import { addPayRule, deletePayRule, deleteReset, endPayRule, listPayRules, listResets, setPotBalance } from './budgetService'
 import type { BalanceReset, PayRule } from './potMath'
 
@@ -60,12 +61,14 @@ export function PayPlanCard({ onChange }: { onChange?: () => void }) {
   return (
     <>
       <div className="card">
-        <h3>Pay plan</h3>
-        <p className="muted small">
-          Add one line for each way you get paid: an amount, how often (every 1 week, every 3 days, every 2 months…) and the
-          date it starts. Weekly pay keeps the weekday of its start date; monthly pay keeps its day of the month. To change your
-          plan, end a line and add a new one. What's in your pot carries over.
-        </p>
+        <h3>
+          Pay plan
+          <Info>
+            One line for each way you get paid: an amount, how often (every 1 week, every 3 days, every 2 months…) and the date it
+            starts. Weekly pay keeps the weekday of its start date; monthly pay keeps its day of the month. To change your plan, end
+            a line and add a new one. What's in your pot carries over.
+          </Info>
+        </h3>
         {message && <p className="note">{message}</p>}
         {rules.length === 0 && <p className="muted small">No pay set up yet.</p>}
         {rules.map((r) => {
@@ -134,11 +137,13 @@ export function PayPlanCard({ onChange }: { onChange?: () => void }) {
       </div>
 
       <div className="card">
-        <h3>Money you have right now</h3>
-        <p className="muted small">
-          Sets your pot to the amount you really have. Use it when you start, or after a stretch you couldn't track: the gap is
-          simply skipped and counting carries on from here.
-        </p>
+        <h3>
+          Money you have right now
+          <Info>
+            Sets your pot to the amount you really have. Use it when you start, or after a stretch you couldn't track: the gap is
+            skipped and counting carries on from here.
+          </Info>
+        </h3>
         {lastReset && (
           <div className="row">
             <span>

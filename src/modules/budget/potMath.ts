@@ -48,7 +48,7 @@ export interface PotSummary {
 }
 
 // Day `day` of a month, or the month's last day if it is shorter (31st -> 30 Nov).
-function monthlyDate(year: number, monthIndex: number, day: number): string {
+export function monthlyDate(year: number, monthIndex: number, day: number): string {
   const lastDay = new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate()
   return new Date(Date.UTC(year, monthIndex, Math.min(day, lastDay))).toISOString().slice(0, 10)
 }

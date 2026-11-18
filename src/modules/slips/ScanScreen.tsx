@@ -1,5 +1,6 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { errorText, todayISO } from '../../lib/format'
+import { Info } from '../../components/Info'
 import { LimitWarning, useWeekSpending } from '../budget/limitWarning'
 import { matchCategory, type Rule } from '../rules/matchCategory'
 import { listRules } from '../rules/rulesService'
@@ -110,7 +111,10 @@ export function ScanScreen() {
   if (stage === 'confirm' && draft) {
     return (
       <form className="stack narrow" onSubmit={save}>
-        <h2>Check slip</h2>
+        <h2>
+          Check slip
+          <Info>Read on this device. Fix anything that's wrong before saving.</Info>
+        </h2>
         <div className="card">
           {preview && <img className="slip-img" src={preview} alt="The slip that was read" />}
           <p className="small">
@@ -156,7 +160,6 @@ export function ScanScreen() {
             <input value={note} onChange={(e) => changeNote(e.target.value)} placeholder="Optional, for yourself" />
           </label>
           <LimitWarning spending={spending} category={categories.find((c) => c.id === categoryId)} amount={Number(amount)} date={date} />
-          <p className="muted small">Read on this device. Fix anything that's wrong before saving.</p>
           {error && <p className="error">{error}</p>}
           <button className="primary" disabled={duplicate}>
             Looks right, save
@@ -169,14 +172,16 @@ export function ScanScreen() {
 
   return (
     <div className="stack narrow">
-      <h2>Scan slip</h2>
+      <h2>
+        Scan slip
+        <Info>
+          The image is read on this device and never uploaded. Works with SCB, Kasikorn (K PLUS and MAKE), Bangkok Bank and
+          TrueMoney slips; you confirm everything before it saves.
+        </Info>
+      </h2>
       <div className="card">
         {message && <p className="note">{message}</p>}
         <p>Pick a slip screenshot or take a photo of one.</p>
-        <p className="muted small">
-          The image is read on this device and never uploaded. Works with SCB, Kasikorn (K PLUS and MAKE), Bangkok Bank and
-          TrueMoney slips; you confirm everything before it saves.
-        </p>
         {error && <p className="error">{error}</p>}
         {picker('Choose slip', 'primary')}
       </div>

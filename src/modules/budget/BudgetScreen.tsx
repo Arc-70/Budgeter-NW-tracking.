@@ -3,6 +3,8 @@ import { dateWithYear, errorText, money, shortDate, todayISO } from '../../lib/f
 import { listTransactions } from '../transactions/transactionService'
 import type { Transaction } from '../transactions/types'
 import { loadBudgetData, potFor, type BudgetData } from './budgetService'
+import { Info } from '../../components/Info'
+import { computeDailyPool } from './dailyMath'
 import { Meter } from './Meter'
 import { describeRule, PayPlanCard } from './PayPlanCard'
 
@@ -32,13 +34,16 @@ export function BudgetScreen({ onAdd }: { onAdd: () => void }) {
   if (!data) return <p className="muted">Loading…</p>
 
   const pot = potFor(data, todayISO())
+  const daily = computeDailyPool(data.rules, data.txs, todayISO())
 
   // First visit: set up how you get paid.
   if (!pot.hasPlan) {
     return (
       <div className="stack narrow">
-        <h2>Set up your budget</h2>
-        <p className="muted">Add how you get paid, and the money you have right now. You can change both any time in Settings.</p>
+        <h2>
+          Set up your budget
+          <Info>Add how you get paid, and the money you have right now. You can change both any time in Settings.</Info>
+        </h2>
         <PayPlanCard onChange={reload} />
       </div>
     )
@@ -94,6 +99,55 @@ export function BudgetScreen({ onAdd }: { onAdd: () => void }) {
         </div>
 
         <div className="card">
+          <h3>
+            Today
+            <Info>
+              Your pay spread evenly over each day of the month: every pay line's amount divided by the days it covers. What you
+              don't spend carries to the next day, and it starts fresh on the 1st.
+            </Info>
+          </h3>
+          <div className={`hero num ${daily.available < 0 ? 'neg' : ''}`}>{money(daily.available)}</div>
+          <p className="muted small">left to spend today</p>
+          <div className="pot">
+            <div>
+              <span className="muted small">Per day</span>
+              <b className="num">{money(Math.round(daily.ratePerDay * 100) / 100)}</b>
+            </div>
+            <div>
+              <span className="muted small">Saved up</span>
+              <b className={`num ${daily.carried < 0 ? 'neg' : ''}`}>
+                {daily.carried > 0 ? '+' : ''}
+                {money(Math.round(daily.carried * 100) / 100)}
+              </b>
+            </div>
+            <div>
+              <span className="muted small">Spent today</span>
+              <b className="num">{money(daily.spentToday)}</b>
+            </div>
+          </div>
+          <Meter name="Spent this month" spent={daily.spentThisMonth} limit={Math.round(daily.monthTotal * 100) / 100} />
+        </div>
+      </div>
+
+      <div className="two">
+        <div className="card">
+          <h3>
+            Categories
+            <Info>Limits are weekly unless marked "this month". Going over only shows a warning. Set them in Settings.</Info>
+          </h3>
+          {data.categories.map((c) => (
+            <Meter
+              key={c.id}
+              name={c.name}
+              spent={(c.limit_period === 'monthly' ? pot.spentByCategoryMonth : pot.spentByCategory).get(c.id) ?? 0}
+              limit={c.weekly_limit}
+              period={c.limit_period}
+            />
+          ))}
+          {uncategorised > 0 && <Meter name="Uncategorised" spent={uncategorised} limit={null} />}
+        </div>
+
+        <div className="card">
           <h3>Spent per week</h3>
           <div className="weeks">
             {pot.history.map((h) => (
@@ -107,23 +161,7 @@ export function BudgetScreen({ onAdd }: { onAdd: () => void }) {
         </div>
       </div>
 
-      <div className="two">
-        <div className="card">
-          <h3>Categories (soft limits)</h3>
-          {data.categories.map((c) => (
-            <Meter
-              key={c.id}
-              name={c.name}
-              spent={(c.limit_period === 'monthly' ? pot.spentByCategoryMonth : pot.spentByCategory).get(c.id) ?? 0}
-              limit={c.weekly_limit}
-              period={c.limit_period}
-            />
-          ))}
-          {uncategorised > 0 && <Meter name="Uncategorised" spent={uncategorised} limit={null} />}
-          <p className="muted small">Weekly unless marked "this month". Set limits in Settings; going over only shows a warning.</p>
-        </div>
-
-        <div className="card">
+      <div className="card">
           <h3>This week's transactions</h3>
           {thisWeek.length === 0 && <p className="muted small">Nothing logged this week yet.</p>}
           {thisWeek.map((t) => (
@@ -141,7 +179,6 @@ export function BudgetScreen({ onAdd }: { onAdd: () => void }) {
               </span>
             </div>
           ))}
-        </div>
       </div>
     </div>
   )

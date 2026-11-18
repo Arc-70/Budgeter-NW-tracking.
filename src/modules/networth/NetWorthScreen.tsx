@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { dateWithYear, errorText, money, shortDate, todayISO } from '../../lib/format'
+import { Info } from '../../components/Info'
 import { HistoryTable } from './HistoryTable'
 import { series, summarize, type AccountRow, type Currency } from './netWorthMath'
 import {
@@ -87,7 +88,13 @@ export function NetWorthScreen() {
       </div>
 
       <div className="card">
-        <h3>Accounts</h3>
+        <h3>
+          Accounts
+          <Info>
+            For debts, type the amount you owe as a positive number. USD is converted at ฿{data.usdRate} per $1 (change it in
+            Settings). Close keeps an account in your history; ✕ deletes it and its history.
+          </Info>
+        </h3>
         {summary.accounts.length === 0 && <p className="muted small">No accounts yet. Add your first one below.</p>}
         <div className="scroll">
           <table>
@@ -123,10 +130,6 @@ export function NetWorthScreen() {
             })
           }
         />
-        <p className="muted small">
-          For debts, type the amount you owe as a positive number. USD is converted at ฿{data.usdRate} per $1 (change it in Settings).
-          Close keeps an account in your history; ✕ deletes it and its history.
-        </p>
         {data.accounts.filter((a) => a.closed_on).map((a) => (
           <div className="row muted small" key={a.id}>
             <span>

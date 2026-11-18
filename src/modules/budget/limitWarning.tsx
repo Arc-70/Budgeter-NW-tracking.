@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { money, todayISO } from '../../lib/format'
 import type { Category } from '../transactions/types'
 import { loadBudgetData, potFor } from './budgetService'
+import { computeDailyPool, overDailyBy, type DailyPool } from './dailyMath'
 
 export interface WeekSpending {
   weekStart: string
@@ -10,6 +11,7 @@ export interface WeekSpending {
   monthStart: string
   monthEnd: string
   spentByCategoryMonth: Map<string | null, number>
+  daily?: DailyPool | null
 }
 
 // This week's spending per category. `refreshKey` reloads it after a save.
@@ -17,7 +19,7 @@ export function useWeekSpending(refreshKey = 0): WeekSpending | null {
   const [spending, setSpending] = useState<WeekSpending | null>(null)
   useEffect(() => {
     loadBudgetData()
-      .then((d) => setSpending(potFor(d, todayISO())))
+      .then((d) => setSpending({ ...potFor(d, todayISO()), daily: computeDailyPool(d.rules, d.txs, todayISO()) }))
       .catch(() => setSpending(null)) // the warning is a nicety; never block entry over it
   }, [refreshKey])
   return spending
@@ -34,7 +36,7 @@ export function overLimitBy(spending: WeekSpending | null, category: Category | 
   return Math.max(0, spent + amount - category.weekly_limit)
 }
 
-// Soft limit: warns, never blocks.
+// Soft warnings for a category limit and for the daily pool. Never blocks saving.
 export function LimitWarning({ spending, category, amount, date }: {
   spending: WeekSpending | null
   category: Category | undefined
@@ -42,11 +44,21 @@ export function LimitWarning({ spending, category, amount, date }: {
   date: string
 }) {
   const over = overLimitBy(spending, category, amount, date)
-  if (over <= 0 || !category) return null
+  const overDaily = overDailyBy(spending?.daily, amount, date, todayISO())
   return (
-    <p className="note">
-      {category.name} will be {money(over)} over its {money(category.weekly_limit!)} limit this{' '}
-      {category.limit_period === 'monthly' ? 'month' : 'week'}. You can still save.
-    </p>
+    <>
+      {over > 0 && category && (
+        <p className="note">
+          {category.name} will be {money(over)} over its {money(category.weekly_limit!)} limit this{' '}
+          {category.limit_period === 'monthly' ? 'month' : 'week'}. You can still save.
+        </p>
+      )}
+      {overDaily > 0 && (
+        <p className="note">
+          This is {money(overDaily)} more than your daily budget has left ({money(Math.max(0, spending!.daily!.available))}). You can
+          still save.
+        </p>
+      )}
+    </>
   )
 }
